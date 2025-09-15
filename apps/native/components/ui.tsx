@@ -50,14 +50,14 @@ export function ChipOption({
     <Pressable
       onPress={onPress}
       style={{
-        borderColor: selected ? colors.primary : colors.border,
-        backgroundColor: selected ? colors.primary : "transparent",
+        borderColor: selected ? "#ffffff" : colors.border,
+        backgroundColor: selected ? "#ffffff" : "transparent",
       }}
       className="rounded-full border px-3 py-2"
     >
       <AppText
-        style={{ color: selected ? colors.background : colors.foreground }}
-        className="text-sm"
+        style={{ color: selected ? "#000000" : colors.foreground }}
+        className="text-sm font-medium"
       >
         {label}
       </AppText>
