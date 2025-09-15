@@ -1,5 +1,6 @@
 import { Slot } from "expo-router";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import "../global.css";
 import { HeroUINativeProvider } from "heroui-native";
 import { AppThemeProvider, useAppTheme } from "@/contexts/app-theme-context";
@@ -29,9 +30,11 @@ export default function Layout() {
     <ConvexProvider>
       <SplashScreenProvider>
         <GestureHandlerRootView className="flex-1">
-          <AppThemeProvider>
-            <ThemedLayout />
-          </AppThemeProvider>
+          <SafeAreaProvider>
+            <AppThemeProvider>
+              <ThemedLayout />
+            </AppThemeProvider>
+          </SafeAreaProvider>
         </GestureHandlerRootView>
       </SplashScreenProvider>
     </ConvexProvider>

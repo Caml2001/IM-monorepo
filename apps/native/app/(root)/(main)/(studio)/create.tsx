@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, TextInput, ScrollView, Pressable, Image } from "react-native";
+import { View, TextInput, ScrollView, Pressable, Image, Alert } from "react-native";
 import { Button, Switch, useTheme } from "heroui-native";
 import type { ImageSourcePropType } from "react-native";
 import { ScreenScrollView } from "@/components/screen-scroll-view";
@@ -10,8 +10,21 @@ import { AppText } from "@/components/app-text";
 import { ChipOption, Label, Section, Hint } from "@/components/ui";
 import { Link } from "expo-router";
 import { useRouter } from "expo-router";
+import { useGenerateImage } from "@/lib/hooks/useImages";
+import { useCurrentUser, useUserCredits } from "@/lib/hooks/useUser";
 
-const STYLES = ["Photoreal", "Anime", "Illustration", "Product"] as const;
+const STYLES = ["Photoreal", "Anime", "Illustration", "Product", "Cinematic", "Fantasy", "Minimal"] as const;
+
+// Style modifiers to enhance the prompt
+const STYLE_MODIFIERS: Record<string, string> = {
+  Photoreal: "photorealistic, ultra detailed, professional photography, 8k resolution, high quality",
+  Anime: "anime style, manga art, japanese animation, studio ghibli style, vibrant colors",
+  Illustration: "digital illustration, artistic drawing, detailed artwork, creative design",
+  Product: "product photography, commercial shot, clean background, professional lighting, marketing photo",
+  Cinematic: "cinematic shot, movie still, dramatic lighting, film photography, wide angle, epic composition",
+  Fantasy: "fantasy art, magical, ethereal, dreamlike, surreal, mystical atmosphere",
+  Minimal: "minimalist design, simple, clean lines, modern, elegant, white background",
+};
 const ASPECTS = ["1:1", "3:4", "4:3", "9:16", "16:9"] as const;
 
 export default function CreateScreen() {
@@ -24,9 +37,18 @@ export default function CreateScreen() {
   const [negative, setNegative] = useState("");
   const [seedLocked, setSeedLocked] = useState(false);
   const [seed, setSeed] = useState(() => Math.floor(Math.random() * 10_000_000));
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [resultUris, setResultUris] = useState<ImageSourcePropType[]>([]);
+  const [resultUris, setResultUris] = useState<string[]>([]);
   const router = useRouter();
+  
+  // Hooks for backend
+  const { user, isLoading: userLoading } = useCurrentUser();
+  const credits = useUserCredits(user?._id);
+  const { generate, isGenerating } = useGenerateImage();
+  
+  // Debug logging
+  console.log("User:", user);
+  console.log("Credits:", credits);
+  console.log("User loading:", userLoading);
 
   const sourceToUri = (src: ImageSourcePropType): string | undefined => {
     if (typeof src === "number") {
@@ -41,31 +63,86 @@ export default function CreateScreen() {
   };
 
   const handleGenerate = async () => {
-    setIsGenerating(true);
-    // Simula 4 resultados
-    setTimeout(() => {
-      setResultUris([
-        require("@/assets/icon.png"),
-        require("@/assets/adaptive-icon.png"),
-        require("@/assets/splash.png"),
-        require("@/assets/favicon.png"),
-      ]);
-      const first = sourceToUri(require("@/assets/icon.png"));
-      if (first) router.push({ pathname: "/(root)/(main)/viewer", params: { uri: encodeURIComponent(first) } });
-      setIsGenerating(false);
-    }, 900);
+    console.log("=== handleGenerate called ===");
+    console.log("User:", user);
+    console.log("User ID:", user?._id);
+    console.log("Credits:", credits);
+    console.log("Prompt:", prompt);
+    
+    // Check if user is authenticated
+    if (!user?._id) {
+      console.log("No user ID, showing auth alert");
+      Alert.alert("Authentication Required", "Please sign in to generate images");
+      return;
+    }
+    
+    // For testing, skip credit check temporarily
+    // if (credits <= 0) {
+    //   Alert.alert("No Credits", "You don't have enough credits to generate images");
+    //   return;
+    // }
+    
+    if (!prompt.trim()) {
+      Alert.alert("Missing Prompt", "Please enter a description for your image");
+      return;
+    }
+    
+    try {
+      console.log("Starting generation with prompt:", prompt);
+      console.log("Calling generate function...");
+      
+      // Apply style modifier to the prompt
+      const styleModifier = STYLE_MODIFIERS[style] || "";
+      const enhancedPrompt = `${prompt}, ${styleModifier}`;
+      
+      console.log("Enhanced prompt with style:", enhancedPrompt);
+      
+      const result = await generate({
+        userId: user._id,
+        prompt: enhancedPrompt,
+        negativePrompt: negative || undefined,
+        quality: "fast", // Use fast for testing
+        seed: seedLocked ? seed : undefined,
+        aspectRatio: aspect,
+      });
+      
+      console.log("Generation result:", result);
+      
+      if (result?.imageUrl) {
+        console.log("Got image URL:", result.imageUrl);
+        setResultUris([result.imageUrl]);
+        // Navigate to viewer with the generated image
+        router.push({ 
+          pathname: "/(root)/(main)/viewer", 
+          params: { uri: encodeURIComponent(result.imageUrl) } 
+        });
+      } else {
+        console.log("No image URL in result");
+      }
+    } catch (error) {
+      console.error("Generation error:", error);
+      // Error is already handled by the hook with Alert
+    }
   };
 
-  // Keep guidance consistent with style
+  // Apply style and adjust parameters
   const applyStyle = (s: (typeof STYLES)[number]) => {
     setStyle(s);
-    const defaults: Record<(typeof STYLES)[number], number> = {
-      Photoreal: 5,
-      Anime: 9,
-      Illustration: 8,
-      Product: 6,
+    
+    // Adjust negative prompt based on style
+    const negativeDefaults: Record<string, string> = {
+      Photoreal: "blurry, low quality, distorted, unrealistic, cartoon",
+      Anime: "realistic, photographic, western style, low quality",
+      Illustration: "photorealistic, blurry, low quality",
+      Product: "cluttered, messy, unprofessional, low quality, blurry",
+      Cinematic: "amateur, low quality, blurry, bad composition",
+      Fantasy: "realistic, mundane, ordinary, low quality",
+      Minimal: "cluttered, complex, busy, detailed background",
     };
-    setGuidance(defaults[s]);
+    
+    if (negativeDefaults[s] && !negative) {
+      setNegative(negativeDefaults[s]);
+    }
   };
 
   return (
@@ -172,12 +249,11 @@ export default function CreateScreen() {
             <View className="gap-2">
               <Label>Results</Label>
               <View className="flex-row flex-wrap gap-3">
-                {resultUris.map((src, i) => (
+                {resultUris.map((uri, i) => (
                   <Pressable key={i} onPress={() => {
-                    const uri = sourceToUri(src);
-                    if (uri) router.push({ pathname: "/(root)/(main)/viewer", params: { uri: encodeURIComponent(uri) } });
+                    router.push({ pathname: "/(root)/(main)/viewer", params: { uri: encodeURIComponent(uri) } });
                   }}>
-                    <PreviewCard source={src} />
+                    <PreviewCard source={{ uri }} />
                   </Pressable>
                 ))}
               </View>
@@ -186,9 +262,9 @@ export default function CreateScreen() {
         )}
       </ScreenScrollView>
       <PrimaryFooter
-        label={isGenerating ? "Generating" : "Generate"}
+        label={isGenerating ? "Generating..." : credits > 0 ? `Generate (${credits} credits)` : "No Credits"}
         loading={isGenerating}
-        disabled={!prompt}
+        disabled={!prompt || credits <= 0 || !user}
         onPress={handleGenerate}
       />
 
