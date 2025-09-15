@@ -6,6 +6,7 @@ import { ScreenScrollView } from "@/components/screen-scroll-view";
 import { PrimaryFooter } from "@/components/primary-footer";
 import { Label, Section, ChipOption, Hint } from "@/components/ui";
 import { Icon } from "@/components/Icon";
+import { AppText } from "@/components/app-text";
 import { useCurrentUser } from "@/lib/hooks/useUser";
 import { useMixImages, useRemoveBackground, useUploadImage, useEnhancePrompt } from "@/lib/hooks/useImages";
 import { useRouter } from "expo-router";
@@ -254,22 +255,31 @@ export default function EditScreen() {
 
       {images.length > 0 && mode !== "Background Remove" && (
         <Section>
-          <View className="gap-2">
-            <Label>Create prompt</Label>
+          <View className="gap-3">
+            <View className="flex-row items-center gap-2">
+              <Icon name="color-wand-outline" size={20} color={colors.accent} />
+              <Label>Creative Prompt</Label>
+            </View>
             <TextInput
-              placeholder={"A cinematic poster in a neon city…"}
+              placeholder={"Describe your vision: style, mood, setting, lighting..."}
               value={prompt}
               onChangeText={setPrompt}
               multiline
-              numberOfLines={3}
-              className="rounded-xl border border-border p-3 text-base"
+              numberOfLines={4}
+              className="rounded-xl border-2 p-4 text-base font-medium"
               placeholderTextColor={colors.mutedForeground}
-              style={{ color: colors.foreground, textAlignVertical: "top", minHeight: 80 }}
+              style={{ 
+                color: colors.foreground, 
+                textAlignVertical: "top", 
+                minHeight: 100,
+                borderColor: prompt ? colors.accent : colors.border,
+                backgroundColor: prompt ? colors.accent + '05' : 'transparent'
+              }}
             />
             <Button
-              variant="tertiary"
-              size="sm"
-              className="rounded-full self-start mb-2"
+              variant={prompt ? "secondary" : undefined}
+              size="md"
+              className="rounded-xl self-stretch"
               disabled={isEnhancing || images.length === 0}
               onPress={async () => {
                   if (!user?._id) {
@@ -299,11 +309,15 @@ export default function EditScreen() {
                 }}
               >
                 <Button.StartContent>
-                  <Icon name="sparkles" size={14} color={isEnhancing ? colors.mutedForeground : colors.foreground} />
+                  <Icon name="sparkles" size={18} color={isEnhancing ? colors.mutedForeground : (prompt ? colors.foreground : colors.background)} />
                 </Button.StartContent>
-                <Button.LabelContent>{isEnhancing ? "Enhancing..." : "Enhance Prompt"}</Button.LabelContent>
+                <Button.LabelContent className="font-semibold">{isEnhancing ? "Enhancing with AI..." : "✨ Enhance with AI"}</Button.LabelContent>
               </Button>
-            <Hint>Describe the new scene that blends your photos (optional).</Hint>
+            {prompt && (
+              <View className="p-3 rounded-lg" style={{ backgroundColor: colors.accent + '10', borderWidth: 1, borderColor: colors.accent + '30' }}>
+                <AppText className="text-xs" style={{ color: colors.foreground }}>💡 Tip: A detailed prompt creates much better results!</AppText>
+              </View>
+            )}
           </View>
         </Section>
       )}

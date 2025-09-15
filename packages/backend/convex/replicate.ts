@@ -10,6 +10,7 @@ import {
 } from "./lib/replicateClient";
 import { uploadImageFromUrl, uploadImageFromBase64, generateImageKey } from "./lib/r2";
 import type { Id } from "./_generated/dataModel";
+import type { ActionCtx } from "./_generated/server";
 
 /**
  * Enhance a prompt using OpenRouter AI
@@ -133,11 +134,16 @@ export const generateImage = action({
     seed: v.optional(v.number()),
     aspectRatio: v.optional(v.string()),
   },
+  returns: v.object({
+    success: v.boolean(),
+    imageId: v.id("images"),
+    imageUrl: v.string(),
+  }),
   handler: async (ctx, args) => {
     const { userId, prompt, negativePrompt, quality = "balanced", seed, aspectRatio } = args;
     
     // Create image record in database with pending status
-    const imageId = await ctx.runMutation(internal.images.createPending, {
+    const imageId: Id<"images"> = await ctx.runMutation(internal.images.createPending, {
       userId,
       prompt,
       negativePrompt,
@@ -224,11 +230,16 @@ export const mixImages = action({
     negativePrompt: v.optional(v.string()),
     seed: v.optional(v.number()),
   },
+  returns: v.object({
+    success: v.boolean(),
+    imageId: v.id("images"),
+    imageUrl: v.string(),
+  }),
   handler: async (ctx, args) => {
     const { userId, imageUrls, prompt = "Blend these images naturally", negativePrompt, seed } = args;
     
     // Create image record
-    const imageId = await ctx.runMutation(internal.images.createPending, {
+    const imageId: Id<"images"> = await ctx.runMutation(internal.images.createPending, {
       userId,
       prompt,
       negativePrompt,
@@ -324,11 +335,16 @@ export const removeBackground = action({
     imageUrl: v.string(),
     preservePartialAlpha: v.optional(v.boolean()),
   },
+  returns: v.object({
+    success: v.boolean(),
+    imageId: v.id("images"),
+    imageUrl: v.string(),
+  }),
   handler: async (ctx, args) => {
     const { userId, imageUrl, preservePartialAlpha = true } = args;
     
     // Create image record
-    const imageId = await ctx.runMutation(internal.images.createPending, {
+    const imageId: Id<"images"> = await ctx.runMutation(internal.images.createPending, {
       userId,
       prompt: "Background removed",
       type: "bg-removed",
@@ -407,11 +423,16 @@ export const upscaleImage = action({
     scale: v.optional(v.number()),
     enhanceFaces: v.optional(v.boolean()),
   },
+  returns: v.object({
+    success: v.boolean(),
+    imageId: v.id("images"),
+    imageUrl: v.string(),
+  }),
   handler: async (ctx, args) => {
     const { userId, imageUrl, scale = 2, enhanceFaces = false } = args;
     
     // Create image record
-    const imageId = await ctx.runMutation(internal.images.createPending, {
+    const imageId: Id<"images"> = await ctx.runMutation(internal.images.createPending, {
       userId,
       prompt: `Upscaled ${scale}x`,
       type: "upscaled",
@@ -426,7 +447,6 @@ export const upscaleImage = action({
       
       const input = {
         image: imageUrl,
-        scale,
         ...params,
       };
       
@@ -479,11 +499,16 @@ export const editImage = action({
     prompt: v.string(),
     guidanceScale: v.optional(v.number()),
   },
+  returns: v.object({
+    success: v.boolean(),
+    imageId: v.id("images"),
+    imageUrl: v.string(),
+  }),
   handler: async (ctx, args) => {
     const { userId, imageUrl, prompt, guidanceScale = 7.5 } = args;
     
     // Create image record
-    const imageId = await ctx.runMutation(internal.images.createPending, {
+    const imageId: Id<"images"> = await ctx.runMutation(internal.images.createPending, {
       userId,
       prompt,
       type: "edited",
@@ -495,8 +520,8 @@ export const editImage = action({
       const input = {
         image: imageUrl,
         prompt,
-        guidance_scale: guidanceScale,
         ...DEFAULT_PARAMS.instructPix2Pix,
+        guidance_scale: guidanceScale, // Override default value
       };
       
       console.log("Editing image with InstructPix2Pix");
