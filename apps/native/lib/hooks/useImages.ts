@@ -4,6 +4,91 @@ import { useCallback, useState } from "react";
 import { Alert } from "react-native";
 
 /**
+ * Hook to upload local images to R2
+ */
+export function useUploadImage() {
+  const uploadAction = useAction(api.replicate.uploadImage);
+  const [isUploading, setIsUploading] = useState(false);
+  
+  const uploadImage = useCallback(async (userId: Id<"users">, imageUri: string) => {
+    setIsUploading(true);
+    try {
+      // If it's already an HTTP URL, return it as is
+      if (imageUri.startsWith('http://') || imageUri.startsWith('https://')) {
+        return imageUri;
+      }
+      
+      // Convert image to base64 using fetch
+      const response = await fetch(imageUri);
+      const blob = await response.blob();
+      
+      // Convert blob to base64
+      const base64Data = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const result = reader.result as string;
+          // Remove the data:image/xxx;base64, prefix
+          const base64 = result.split(',')[1];
+          resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+      
+      // Determine content type from blob
+      const contentType = blob.type || 'image/jpeg';
+      
+      // Upload to R2
+      const result = await uploadAction({
+        userId,
+        base64Data,
+        contentType,
+      });
+      
+      return result.imageUrl;
+    } catch (error) {
+      console.error("Upload failed:", error);
+      throw error;
+    } finally {
+      setIsUploading(false);
+    }
+  }, [uploadAction]);
+  
+  return { uploadImage, isUploading };
+}
+
+/**
+ * Hook to enhance prompts using AI
+ */
+export function useEnhancePrompt() {
+  const enhanceAction = useAction(api.replicate.enhancePrompt);
+  const [isEnhancing, setIsEnhancing] = useState(false);
+  
+  const enhancePrompt = useCallback(async (imageUrls: string[], userPrompt?: string) => {
+    setIsEnhancing(true);
+    try {
+      const result = await enhanceAction({
+        imageUrls,
+        userPrompt,
+      });
+      return result;
+    } catch (error) {
+      console.error("Prompt enhancement failed:", error);
+      // Don't show alert for enhancement failures, just return original
+      return {
+        success: false,
+        enhancedPrompt: userPrompt || "",
+        originalPrompt: userPrompt
+      };
+    } finally {
+      setIsEnhancing(false);
+    }
+  }, [enhanceAction]);
+  
+  return { enhancePrompt, isEnhancing };
+}
+
+/**
  * Hook to generate images
  */
 export function useGenerateImage() {
@@ -44,6 +129,7 @@ export function useRemoveBackground() {
   const removeBackground = useCallback(async (params: {
     userId: Id<"users">;
     imageUrl: string;
+    preservePartialAlpha?: boolean;
   }) => {
     setIsProcessing(true);
     try {
@@ -59,6 +145,36 @@ export function useRemoveBackground() {
   }, [removeAction]);
   
   return { removeBackground, isProcessing };
+}
+
+/**
+ * Hook to mix multiple images
+ */
+export function useMixImages() {
+  const mixAction = useAction(api.replicate.mixImages);
+  const [isProcessing, setIsProcessing] = useState(false);
+  
+  const mixImages = useCallback(async (params: {
+    userId: Id<"users">;
+    imageUrls: string[];
+    prompt?: string;
+    negativePrompt?: string;
+    seed?: number;
+  }) => {
+    setIsProcessing(true);
+    try {
+      const result = await mixAction(params);
+      return result;
+    } catch (error) {
+      console.error("Image mixing failed:", error);
+      Alert.alert("Processing Failed", error instanceof Error ? error.message : "Failed to mix images");
+      throw error;
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [mixAction]);
+  
+  return { mixImages, isProcessing };
 }
 
 /**

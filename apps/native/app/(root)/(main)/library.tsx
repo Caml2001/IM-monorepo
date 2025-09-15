@@ -15,7 +15,10 @@ const IMAGE_TYPES = ["all", "generated", "edited", "upscaled", "bg-removed"] as 
 type ImageType = typeof IMAGE_TYPES[number];
 
 const { width: screenWidth } = Dimensions.get("window");
-const imageSize = (screenWidth - 6) / 3; // 3 columns with minimal padding
+const imagePadding = 1; // Minimal padding between images
+const containerPadding = 40; // Total horizontal padding from ScreenScrollView (20 * 2)
+const totalGaps = imagePadding * 2; // 2 gaps between 3 images
+const imageSize = (screenWidth - containerPadding - totalGaps) / 3; // 3 columns with padding
 
 export default function LibraryScreen() {
   const { colors } = useTheme();
@@ -170,7 +173,7 @@ export default function LibraryScreen() {
                 </Text>
               </View>
               
-              <View className="flex-row flex-wrap">
+              <View className="flex-row flex-wrap" style={{ gap: imagePadding }}>
                 {images.map((image, index) => (
                   <Pressable
                     key={image._id}
@@ -179,15 +182,15 @@ export default function LibraryScreen() {
                     style={{ 
                       width: imageSize, 
                       height: imageSize,
-                      padding: 1, // Minimal spacing between images
                     }}
                   >
                     <View 
-                      className="overflow-hidden rounded-md"
+                      className="overflow-hidden"
                       style={{ 
                         width: "100%", 
                         height: "100%",
                         backgroundColor: colors.muted,
+                        borderRadius: 8, // Slight rounded corners
                       }}
                     >
                       <Image
@@ -235,52 +238,6 @@ export default function LibraryScreen() {
                     </View>
                   </Pressable>
                 ))}
-              </View>
-              
-              {/* Stats section with cards */}
-              <View className="px-4 mt-8 mb-6">
-                <Text className="text-xs font-bold mb-4 tracking-wide" style={{ color: colors.mutedForeground }}>OVERVIEW</Text>
-                <View className="gap-3">
-                  {/* Total images card */}
-                  <View className="p-4 rounded-2xl flex-row justify-between items-center"
-                    style={{ backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border + '20' }}>
-                    <View className="flex-row items-center gap-3">
-                      <View className="w-10 h-10 rounded-xl items-center justify-center"
-                        style={{ backgroundColor: colors.primary + '15' }}>
-                        <Icon name="images-outline" size={20} color={colors.primary} />
-                      </View>
-                      <Text className="text-base font-medium" style={{ color: colors.foreground }}>Total Images</Text>
-                    </View>
-                    <Text style={{ color: colors.primary }} className="font-bold text-xl">
-                      {images.length}
-                    </Text>
-                  </View>
-                  
-                  {/* Type breakdown */}
-                  <View className="flex-row gap-3">
-                    <View className="flex-1 p-3 rounded-xl"
-                      style={{ backgroundColor: colors.muted + '50' }}>
-                      <Text className="text-xs mb-1" style={{ color: colors.mutedForeground }}>Generated</Text>
-                      <Text className="font-bold text-lg" style={{ color: colors.foreground }}>
-                        {images.filter(img => img.type === "generated").length}
-                      </Text>
-                    </View>
-                    <View className="flex-1 p-3 rounded-xl"
-                      style={{ backgroundColor: colors.muted + '50' }}>
-                      <Text className="text-xs mb-1" style={{ color: colors.mutedForeground }}>Edited</Text>
-                      <Text className="font-bold text-lg" style={{ color: colors.foreground }}>
-                        {images.filter(img => img.type === "edited").length}
-                      </Text>
-                    </View>
-                    <View className="flex-1 p-3 rounded-xl"
-                      style={{ backgroundColor: colors.muted + '50' }}>
-                      <Text className="text-xs mb-1" style={{ color: colors.mutedForeground }}>Upscaled</Text>
-                      <Text className="font-bold text-lg" style={{ color: colors.foreground }}>
-                        {images.filter(img => img.type === "upscaled").length}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
               </View>
             </>
           )}

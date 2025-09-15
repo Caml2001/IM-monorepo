@@ -18,7 +18,8 @@
       "typedRoutes": true,
       "tsconfigPaths": true
     },
-    "newArchEnabled": true,
+    "newArchEnabled": false,
+    "jsEngine": "jsc",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",

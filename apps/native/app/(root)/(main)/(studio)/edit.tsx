@@ -6,16 +6,25 @@ import { ScreenScrollView } from "@/components/screen-scroll-view";
 import { PrimaryFooter } from "@/components/primary-footer";
 import { Label, Section, ChipOption, Hint } from "@/components/ui";
 import { Icon } from "@/components/Icon";
+import { useCurrentUser } from "@/lib/hooks/useUser";
+import { useMixImages, useRemoveBackground, useUploadImage, useEnhancePrompt } from "@/lib/hooks/useImages";
+import { useRouter } from "expo-router";
 
 const MODES = ["Create", "Background Remove"] as const;
 const BG_PRESETS = ["Transparent", "White", "Black", "Blur"] as const;
 
 export default function EditScreen() {
   const { colors } = useTheme();
+  const router = useRouter();
+  const { user } = useCurrentUser();
+  const { mixImages, isProcessing: isMixing } = useMixImages();
+  const { removeBackground, isProcessing: isRemoving } = useRemoveBackground();
+  const { uploadImage, isUploading } = useUploadImage();
+  const { enhancePrompt, isEnhancing } = useEnhancePrompt();
+  
   const [images, setImages] = useState<string[]>([]);
   const [mode, setMode] = useState<(typeof MODES)[number]>("Create");
   const [prompt, setPrompt] = useState("");
-  const [isProcessing, setIsProcessing] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   // Create advanced
   const [negative, setNegative] = useState("");
@@ -52,11 +61,72 @@ export default function EditScreen() {
   };
 
   const handleProcess = async () => {
-    setIsProcessing(true);
-    setTimeout(() => {
-      setIsProcessing(false);
-    }, 800);
+    if (!user?._id) {
+      Alert.alert("Authentication Required", "Please sign in to process images");
+      return;
+    }
+    
+    if (images.length === 0) {
+      Alert.alert("No Images", "Please select at least one image");
+      return;
+    }
+    
+    try {
+      let result;
+      
+      // Upload local images to R2 first
+      console.log("Uploading images to R2...");
+      const uploadedUrls = await Promise.all(
+        images.map(async (imageUri) => {
+          try {
+            const uploadedUrl = await uploadImage(user._id, imageUri);
+            console.log(`Uploaded: ${imageUri} -> ${uploadedUrl}`);
+            return uploadedUrl;
+          } catch (error) {
+            console.error(`Failed to upload ${imageUri}:`, error);
+            throw error;
+          }
+        })
+      );
+      
+      console.log("All images uploaded:", uploadedUrls);
+      
+      if (mode === "Create") {
+        // Mix/blend images with nano-banana
+        console.log("Mixing images with prompt:", prompt || "Blend these images naturally");
+        result = await mixImages({
+          userId: user._id,
+          imageUrls: uploadedUrls,
+          prompt: prompt || undefined,
+          negativePrompt: negative || undefined,
+          seed: seedLocked ? seed : undefined,
+        });
+      } else {
+        // Remove background from first image
+        console.log("Removing background from image");
+        result = await removeBackground({
+          userId: user._id,
+          imageUrl: uploadedUrls[0],
+          preservePartialAlpha: true,
+        });
+      }
+      
+      console.log("Process result:", result);
+      
+      if (result?.imageUrl) {
+        // Navigate to viewer with the processed image
+        router.push({ 
+          pathname: "/(root)/(main)/viewer", 
+          params: { uri: encodeURIComponent(result.imageUrl) } 
+        });
+      }
+    } catch (error) {
+      console.error("Processing error:", error);
+      // Error is already handled by the hooks
+    }
   };
+  
+  const isProcessing = isUploading || isMixing || isRemoving || isEnhancing;
 
   return (
     <View className="flex-1">
@@ -77,11 +147,18 @@ export default function EditScreen() {
                 variant="tertiary"
                 className="rounded-full"
                 onPress={() => {
-                  const sampleUri = (Image as any).resolveAssetSource(require("@/assets/icon.png")).uri;
-                  setImages((prev) => Array.from(new Set([...prev, sampleUri])).slice(0, 5));
+                  // Use public sample images for testing
+                  const sampleImages = [
+                    "https://images.unsplash.com/photo-1557682250-33bd709cbe85?w=500&q=80",
+                    "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=500&q=80"
+                  ];
+                  setImages((prev) => {
+                    const merged = [...prev, ...sampleImages];
+                    return Array.from(new Set(merged)).slice(0, 5);
+                  });
                 }}
               >
-                <Button.LabelContent>Try sample</Button.LabelContent>
+                <Button.LabelContent>Try samples</Button.LabelContent>
               </Button>
             </View>
           </View>
@@ -183,10 +260,49 @@ export default function EditScreen() {
               placeholder={"A cinematic poster in a neon city…"}
               value={prompt}
               onChangeText={setPrompt}
+              multiline
+              numberOfLines={3}
               className="rounded-xl border border-border p-3 text-base"
               placeholderTextColor={colors.mutedForeground}
-              style={{ color: colors.foreground, textAlignVertical: "top" }}
+              style={{ color: colors.foreground, textAlignVertical: "top", minHeight: 80 }}
             />
+            <Button
+              variant="tertiary"
+              size="sm"
+              className="rounded-full self-start mb-2"
+              disabled={isEnhancing || images.length === 0}
+              onPress={async () => {
+                  if (!user?._id) {
+                    Alert.alert("Authentication Required", "Please sign in to enhance prompts");
+                    return;
+                  }
+                  
+                  try {
+                    // Upload images first if they're local
+                    const uploadedUrls = await Promise.all(
+                      images.map(async (imageUri) => {
+                        if (imageUri.startsWith('http://') || imageUri.startsWith('https://')) {
+                          return imageUri;
+                        }
+                        return await uploadImage(user._id, imageUri);
+                      })
+                    );
+                    
+                    // Enhance the prompt
+                    const result = await enhancePrompt(uploadedUrls, prompt);
+                    if (result.enhancedPrompt) {
+                      setPrompt(result.enhancedPrompt);
+                    }
+                  } catch (error) {
+                    console.error("Enhancement error:", error);
+                  }
+                }}
+              >
+                <Button.StartContent>
+                  <Icon name="sparkles" size={14} color={isEnhancing ? colors.mutedForeground : colors.foreground} />
+                </Button.StartContent>
+                <Button.LabelContent>{isEnhancing ? "Enhancing..." : "Enhance Prompt"}</Button.LabelContent>
+              </Button>
             <Hint>Describe the new scene that blends your photos (optional).</Hint>
           </View>
         </Section>
@@ -262,10 +378,10 @@ export default function EditScreen() {
       )}
       </ScreenScrollView>
       <PrimaryFooter
-        label={isProcessing ? "Processing" : images.length === 0 ? "Upload photos" : "Apply"}
+        label={isUploading ? "Uploading..." : isProcessing ? "Processing..." : images.length === 0 ? "Upload photos" : mode === "Create" ? "Mix Images" : "Remove Background"}
         loading={isProcessing}
         onPress={images.length === 0 ? handlePick : handleProcess}
-        disabled={images.length === 0}
+        disabled={images.length === 0 || !user}
       />
     </View>
   );
