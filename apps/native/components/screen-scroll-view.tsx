@@ -10,30 +10,37 @@ const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 interface Props extends AnimatedProps<ScrollViewProps> {
 	className?: string;
 	contentContainerClassName?: string;
+	disableHeaderOffset?: boolean;
 }
 
 export const ScreenScrollView: FC<PropsWithChildren<Props>> = ({
 	children,
 	className,
 	contentContainerClassName,
+	disableHeaderOffset,
 	...props
 }) => {
 	const insets = useSafeAreaInsets();
 	const headerHeight = useHeaderHeight();
 	return (
-		<AnimatedScrollView
-			className={cn("bg-background", className)}
-			contentContainerClassName={cn("px-5", contentContainerClassName)}
+    <AnimatedScrollView
+      className={cn("bg-background", className)}
+      style={{ flex: 1 }}
+      contentContainerClassName={cn("px-5", contentContainerClassName)}
 			contentContainerStyle={{
-				paddingTop: Platform.select({
-					ios: headerHeight,
-					android: 0,
-				}),
+				paddingTop: disableHeaderOffset
+					? 0
+					: Platform.select({
+						ios: headerHeight,
+						android: 0,
+					}),
 				paddingBottom: insets.bottom + 32,
 			}}
-			showsVerticalScrollIndicator={false}
-			{...props}
-		>
+      keyboardDismissMode="on-drag"
+      contentInsetAdjustmentBehavior={Platform.OS === "ios" ? "automatic" : undefined}
+      showsVerticalScrollIndicator={false}
+      {...props}
+    >
 			{children}
 		</AnimatedScrollView>
 	);

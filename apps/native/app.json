@@ -1,40 +1,55 @@
 {
-	"expo": {
-		"name": "native",
-		"slug": "native",
-		"version": "1.0.0",
-		"scheme": "native",
-		"web": {
-			"bundler": "metro",
-			"output": "static",
-			"favicon": "./assets/favicon.png"
-		},
-		"plugins": ["expo-router", "expo-secure-store", "expo-web-browser"],
-		"experiments": {
-			"typedRoutes": true,
-			"tsconfigPaths": true
-		},
-		"newArchEnabled": true,
-		"orientation": "portrait",
-		"icon": "./assets/icon.png",
-		"userInterfaceStyle": "automatic",
-		"splash": {
-			"image": "./assets/splash.png",
-			"resizeMode": "contain",
-			"backgroundColor": "#ffffff"
-		},
-		"assetBundlePatterns": ["**/*"],
-		"ios": {
-			"supportsTablet": true,
-			"bundleIdentifier": "com.amanvarshney01.mybettertapp"
-		},
-		"android": {
-			"adaptiveIcon": {
-				"foregroundImage": "./assets/adaptive-icon.png",
-				"backgroundColor": "#ffffff"
-			},
-			"package": "com.amanvarshney01.mybettertapp",
-			"edgeToEdgeEnabled": true
-		}
-	}
+  "expo": {
+    "name": "Imagenary",
+    "slug": "native",
+    "version": "1.0.0",
+    "scheme": "native",
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-web-browser"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "tsconfigPaths": true
+    },
+    "newArchEnabled": true,
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.charlymtz01.imagenary",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.charlymtz01.imagenary",
+      "edgeToEdgeEnabled": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "f7efcede-fc55-4076-ab97-bf3edde5a938"
+      }
+    }
+  }
 }
