@@ -25,8 +25,10 @@ export function PrimaryFooter({ label, disabled, loading, onPress }: Props) {
           marginBottom: initialBottomInset.current + 12,
         }}
       >
-        <Button className="rounded-full" disabled={disabled || loading} onPress={onPress}>
-          <Button.LabelContent>{loading ? `${label}…` : label}</Button.LabelContent>
+        <Button className="rounded-full" size="lg" disabled={disabled || loading} onPress={onPress}>
+          <Button.LabelContent className="text-background font-semibold">
+            {loading ? `${label}…` : label}
+          </Button.LabelContent>
         </Button>
       </View>
     </View>

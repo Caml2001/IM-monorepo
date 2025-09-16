@@ -236,6 +236,34 @@ export function useEditImage() {
 }
 
 /**
+ * Hook to restore images
+ */
+export function useRestoreImage() {
+  const restoreAction = useAction(api.replicate.restoreImage);
+  const [isRestoring, setIsRestoring] = useState(false);
+
+  const restore = useCallback(async (params: {
+    userId: Id<"users">;
+    imageUrl: string;
+    safetyTolerance?: 0 | 1 | 2;
+  }) => {
+    setIsRestoring(true);
+    try {
+      const result = await restoreAction(params);
+      return result;
+    } catch (error) {
+      console.error("Restore failed:", error);
+      Alert.alert("Restore Failed", error instanceof Error ? error.message : "Failed to restore image");
+      throw error;
+    } finally {
+      setIsRestoring(false);
+    }
+  }, [restoreAction]);
+
+  return { restore, isRestoring };
+}
+
+/**
  * Hook to get user's images
  */
 export function useUserImages(userId: Id<"users"> | undefined, type?: string) {
@@ -243,7 +271,7 @@ export function useUserImages(userId: Id<"users"> | undefined, type?: string) {
     api.images.listUserImages,
     userId ? { userId, type } : "skip"
   );
-  
+
   return images || [];
 }
 
