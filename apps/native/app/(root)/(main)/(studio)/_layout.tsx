@@ -7,6 +7,15 @@ export default function StudioStackLayout() {
       <Stack.Screen name="edit" options={{ headerShown: false }} />
       <Stack.Screen name="scale" options={{ headerShown: false }} />
       <Stack.Screen name="restore" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="styles"
+        options={{
+          headerShown: true,
+          headerTransparent: true,
+          headerTitle: "",
+          headerBackTitleVisible: false,
+        }}
+      />
     </Stack>
   );
 }

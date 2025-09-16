@@ -8,10 +8,10 @@ import { PrimaryFooter } from "@/components/primary-footer";
 import { PreviewCard } from "@/components/preview-card";
 import { AppText } from "@/components/app-text";
 import { ChipOption, Label, Section, Hint } from "@/components/ui";
-import { Link } from "expo-router";
 import { useRouter } from "expo-router";
 import { useGenerateImage, useEnhancePrompt } from "@/lib/hooks/useImages";
 import { useCurrentUser, useUserCredits } from "@/lib/hooks/useUser";
+import { useAppTheme } from "@/contexts/app-theme-context";
 
 const STYLES = ["Photoreal", "Anime", "Illustration", "Product", "Cinematic", "Fantasy", "Minimal"] as const;
 
@@ -29,6 +29,7 @@ const ASPECTS = ["1:1", "3:4", "4:3", "9:16", "16:9"] as const;
 
 export default function CreateScreen() {
   const { colors } = useTheme();
+  const { currentTheme } = useAppTheme();
   const [prompt, setPrompt] = useState("");
   const [style, setStyle] = useState<(typeof STYLES)[number]>("Photoreal");
   const [guidance, setGuidance] = useState(7);
@@ -159,14 +160,13 @@ export default function CreateScreen() {
         onChangeText={setPrompt}
         multiline
         numberOfLines={4}
-        className="rounded-xl border-2 p-4 text-base font-medium"
+        className={`rounded-xl border-2 p-4 text-base font-medium bg-white dark:bg-zinc-900 text-gray-900 dark:text-white ${
+          prompt ? 'border-blue-500' : 'border-gray-200 dark:border-zinc-800'
+        }`}
         placeholderTextColor={colors.mutedForeground}
         style={{
-          color: colors.foreground,
           textAlignVertical: "top",
           minHeight: 100,
-          borderColor: prompt ? colors.accent : colors.border,
-          backgroundColor: colors.card
         }}
       />
 
@@ -202,11 +202,13 @@ export default function CreateScreen() {
         <View className="gap-3">
           <View className="flex-row items-center justify-between">
             <Label>Style</Label>
-            <Link href="/(root)/(main)/(studio)/styles" asChild>
-              <Pressable hitSlop={8} className="px-2 py-1 rounded-full">
-                <AppText className="text-sm" style={{ color: colors.accent }}>More</AppText>
-              </Pressable>
-            </Link>
+            <Pressable
+              hitSlop={8}
+              className="px-2 py-1 rounded-full"
+              onPress={() => router.push("/(root)/(main)/(studio)/styles")}
+            >
+              <AppText className="text-sm" style={{ color: colors.accent }}>More</AppText>
+            </Pressable>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
             {STYLES.map((s) => (
@@ -241,13 +243,10 @@ export default function CreateScreen() {
                   placeholder="Low quality, blurry, extra hands…"
                   value={negative}
                   onChangeText={setNegative}
-                  className="rounded-xl border p-3 text-base"
+                  className="rounded-xl border p-3 text-base bg-white dark:bg-zinc-900 text-gray-900 dark:text-white border-gray-200 dark:border-zinc-800"
                   placeholderTextColor={colors.mutedForeground}
                   style={{
-                    color: colors.foreground,
                     textAlignVertical: "top",
-                    borderColor: colors.border,
-                    backgroundColor: colors.card
                   }}
                 />
                 <Hint>Things to avoid in the result.</Hint>

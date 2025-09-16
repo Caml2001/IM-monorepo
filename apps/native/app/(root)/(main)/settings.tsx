@@ -8,12 +8,13 @@ import { Section, Label } from "@/components/ui";
 import * as Haptics from "expo-haptics";
 import { api } from "@my-better-t-app/backend/convex/_generated/api";
 import { useQuery, useMutation } from "convex/react";
+import { useAppTheme, type ThemeMode } from "@/contexts/app-theme-context";
 
 export default function SettingsRoute() {
 	const { colors } = useTheme();
+	const { themeMode, setThemeMode, currentTheme } = useAppTheme();
 	const [isSigningOut, setIsSigningOut] = useState(false);
 	const [isDeletingUser, setIsDeletingUser] = useState(false);
-	const [selectedTheme, setSelectedTheme] = useState<"system" | "dark" | "light">("system");
 
 	// Get user data including theme preference
 	const userData = useQuery(api.users.getAllUserDataQuery);
@@ -22,9 +23,12 @@ export default function SettingsRoute() {
 	// Load theme preference from backend
 	useEffect(() => {
 		if (userData?.user?.themePreference) {
-			setSelectedTheme(userData.user.themePreference);
+			const savedTheme = userData.user.themePreference as ThemeMode;
+			if (savedTheme !== themeMode) {
+				setThemeMode(savedTheme);
+			}
 		}
-	}, [userData]);
+	}, [userData?.user?.themePreference]);
 	// sign out
 	const handleSignOut = async () => {
 		const { error, data } = await authClient.signOut(
@@ -76,10 +80,10 @@ export default function SettingsRoute() {
 		{ value: "light" as const, label: "Light", icon: "sunny-outline" as const },
 	];
 
-	const handleThemeSelect = async (theme: typeof selectedTheme) => {
-		if (theme !== selectedTheme) {
+	const handleThemeSelect = async (theme: ThemeMode) => {
+		if (theme !== themeMode) {
 			Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-			setSelectedTheme(theme);
+			setThemeMode(theme);
 
 			// Save to backend if user is authenticated
 			if (userData?.user?._id) {
@@ -91,7 +95,7 @@ export default function SettingsRoute() {
 				} catch (error) {
 					console.error("Failed to update theme preference:", error);
 					// Optionally revert the change if the update fails
-					setSelectedTheme(userData.user.themePreference || "system");
+					setThemeMode((userData.user.themePreference || "system") as ThemeMode);
 				}
 			}
 		}
@@ -109,7 +113,7 @@ export default function SettingsRoute() {
 					<View className="flex-row items-center justify-between">
 						<Label>Appearance</Label>
 						<Text className="text-xs" style={{ color: colors.mutedForeground }}>
-							{themeOptions.find(opt => opt.value === selectedTheme)?.label}
+							{themeOptions.find(opt => opt.value === themeMode)?.label}
 						</Text>
 					</View>
 					<View className="flex-row gap-2">
@@ -120,23 +124,23 @@ export default function SettingsRoute() {
 								className="flex-1"
 							>
 								<View
-									className="items-center justify-center py-3 rounded-xl"
-									style={{
-										backgroundColor: selectedTheme === option.value ? colors.accent : colors.card,
-										borderWidth: 1,
-										borderColor: selectedTheme === option.value ? colors.accent : colors.border,
-									}}
+									className={`items-center justify-center py-3 rounded-xl border ${
+										themeMode === option.value
+											? 'bg-blue-500 border-blue-500'
+											: 'bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800'
+									}`}
 								>
 									<Icon
 										name={option.icon}
 										size={20}
-										color={selectedTheme === option.value ? colors.background : colors.foreground}
+										color={themeMode === option.value ? '#ffffff' : colors.foreground}
 									/>
 									<Text
-										className="text-xs mt-1.5 font-semibold"
-										style={{
-											color: selectedTheme === option.value ? colors.background : colors.foreground
-										}}
+										className={`text-xs mt-1.5 font-semibold ${
+											themeMode === option.value
+												? 'text-white'
+												: 'text-gray-900 dark:text-white'
+										}`}
 									>
 										{option.label}
 									</Text>

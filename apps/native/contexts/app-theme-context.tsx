@@ -1,46 +1,81 @@
-import type { ThemeConfig } from "heroui-native";
 import type React from "react";
 import {
 	createContext,
-	useCallback,
 	useContext,
+	useEffect,
 	useMemo,
 	useState,
+	useCallback,
 } from "react";
-import { pastelThemes, type ThemeId } from "../themes/pastel-themes";
+import { useColorScheme as useRNColorScheme } from "react-native";
+import { useColorScheme } from "nativewind";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+export type ThemeMode = "light" | "dark" | "system";
 
 interface AppThemeContextType {
-	currentThemeId: ThemeId;
-	currentTheme: ThemeConfig | undefined;
-	setThemeById: (id: ThemeId) => void;
-	availableThemes: typeof pastelThemes;
+	themeMode: ThemeMode;
+	setThemeMode: (mode: ThemeMode) => void;
+	currentTheme: "light" | "dark";
 }
 
 const AppThemeContext = createContext<AppThemeContextType | undefined>(
 	undefined,
 );
+
+const THEME_KEY = "@app-theme-mode";
+
 export const AppThemeProvider: React.FC<{ children: React.ReactNode }> = ({
 	children,
 }) => {
-	const [currentThemeId, setCurrentThemeId] = useState<ThemeId>("default");
+	const systemColorScheme = useRNColorScheme();
+	const { colorScheme, setColorScheme } = useColorScheme();
+	const [themeMode, setThemeModeState] = useState<ThemeMode>("system");
+	const [isLoaded, setIsLoaded] = useState(false);
 
-	const setThemeById = useCallback((id: ThemeId) => {
-		setCurrentThemeId(id);
-	}, []);
+	// Load saved theme preference
+	useEffect(() => {
+		AsyncStorage.getItem(THEME_KEY).then((savedTheme) => {
+			if (savedTheme) {
+				const mode = savedTheme as ThemeMode;
+				setThemeModeState(mode);
+				// Apply the saved theme immediately
+				if (mode === "system") {
+					setColorScheme("system");
+				} else {
+					setColorScheme(mode);
+				}
+			}
+			setIsLoaded(true);
+		});
+	}, [setColorScheme]);
+
+	const setThemeMode = useCallback(async (mode: ThemeMode) => {
+		setThemeModeState(mode);
+		await AsyncStorage.setItem(THEME_KEY, mode);
+
+		// Apply theme immediately
+		if (mode === "system") {
+			setColorScheme("system");
+		} else {
+			setColorScheme(mode);
+		}
+	}, [setColorScheme]);
 
 	const currentTheme = useMemo(() => {
-		const theme = pastelThemes.find((t) => t.id === currentThemeId);
-		return theme?.config;
-	}, [currentThemeId]);
+		if (themeMode === "system") {
+			return systemColorScheme || "light";
+		}
+		return themeMode;
+	}, [themeMode, systemColorScheme]);
 
 	const value = useMemo(
 		() => ({
-			currentThemeId,
+			themeMode,
+			setThemeMode,
 			currentTheme,
-			setThemeById,
-			availableThemes: pastelThemes,
 		}),
-		[currentThemeId, currentTheme, setThemeById],
+		[themeMode, currentTheme, setThemeMode],
 	);
 
 	return (

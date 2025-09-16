@@ -1,21 +1,23 @@
 import { useState } from "react";
 import { View, Image, TextInput, Pressable, ScrollView, Alert, KeyboardAvoidingView, Platform } from "react-native";
+import { AppText } from "@/components/app-text";
 import * as ImagePicker from "expo-image-picker";
 import { Button, Switch, useTheme } from "heroui-native";
 import { ScreenScrollView } from "@/components/screen-scroll-view";
 import { PrimaryFooter } from "@/components/primary-footer";
 import { Label, Section, ChipOption, Hint } from "@/components/ui";
 import { Icon } from "@/components/Icon";
-import { AppText } from "@/components/app-text";
 import { useCurrentUser } from "@/lib/hooks/useUser";
 import { useMixImages, useRemoveBackground, useUploadImage, useEnhancePrompt } from "@/lib/hooks/useImages";
 import { useRouter } from "expo-router";
+import { useAppTheme } from "@/contexts/app-theme-context";
 
 const MODES = ["Create", "Background Remove"] as const;
 const BG_PRESETS = ["Transparent", "White", "Black", "Blur"] as const;
 
 export default function EditScreen() {
   const { colors } = useTheme();
+  const { currentTheme } = useAppTheme();
   const router = useRouter();
   const { user } = useCurrentUser();
   const { mixImages, isProcessing: isMixing } = useMixImages();
@@ -145,9 +147,12 @@ export default function EditScreen() {
             <Icon name="image-outline" size={32} color={colors.mutedForeground} />
             <Label>No image yet</Label>
             <Hint>Upload one or more photos to edit or create.</Hint>
-            <Button className="rounded-full" onPress={handlePick}>
-              <Button.LabelContent>Upload photo</Button.LabelContent>
-            </Button>
+            <Pressable
+              className="rounded-full px-6 py-3 bg-blue-500"
+              onPress={handlePick}
+            >
+              <AppText className="text-white font-semibold">Upload photo</AppText>
+            </Pressable>
           </View>
         </Section>
       ) : (
@@ -204,29 +209,29 @@ export default function EditScreen() {
                       const ratio = m === "Create" ? 0.40 : 0.6;
                       return (
                       <View key={m} style={{ flex: isSolo ? 1 : ratio }}>
-                        <Button
-                          className="rounded-full justify-start w-full"
-                          size="lg"
-                          variant={mode === m ? undefined : "secondary"}
+                        <Pressable
+                          className={`rounded-full px-4 py-3 flex-row items-center gap-2 ${
+                            mode === m
+                              ? 'bg-blue-500'
+                              : 'bg-gray-100 dark:bg-zinc-800'
+                          }`}
                           onPress={() => setMode(m)}
                         >
-                         <Button.StartContent>
                            {m === "Create" ? (
                              <Icon
                                name="color-wand-outline"
                                size={18}
-                               color={mode === m ? colors.background : colors.foreground}
+                               color={mode === m ? '#ffffff' : colors.foreground}
                              />
                            ) : (
                              <Icon
                                name="image-outline"
                                size={18}
-                               color={mode === m ? colors.background : colors.foreground}
+                               color={mode === m ? '#ffffff' : colors.foreground}
                              />
                            )}
-                         </Button.StartContent>
-                         <Button.LabelContent className="font-bold text-left">{m}</Button.LabelContent>
-                        </Button>
+                         <AppText className={`font-bold ${mode === m ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{m}</AppText>
+                        </Pressable>
                       </View>
                     )})}
                   </View>
@@ -247,14 +252,13 @@ export default function EditScreen() {
             onChangeText={setPrompt}
             multiline
             numberOfLines={4}
-            className="rounded-xl border-2 p-4 text-base font-medium"
+            className={`rounded-xl border-2 p-4 text-base font-medium bg-white dark:bg-zinc-900 text-gray-900 dark:text-white ${
+              prompt ? 'border-blue-500' : 'border-gray-200 dark:border-zinc-800'
+            }`}
             placeholderTextColor={colors.mutedForeground}
             style={{
-              color: colors.foreground,
               textAlignVertical: "top",
               minHeight: 100,
-              borderColor: prompt ? colors.accent : colors.border,
-              backgroundColor: colors.card
             }}
           />
           <Button
@@ -302,6 +306,7 @@ export default function EditScreen() {
         <View className="gap-2">
           <Pressable className="flex-row items-center justify-between" onPress={() => setShowAdvanced((v) => !v)}>
             <Label>Advanced</Label>
+            <Icon name={showAdvanced ? "chevron-up" : "chevron-down"} size={16} color={colors.mutedForeground} />
           </Pressable>
           {showAdvanced && (
             <View className="gap-4 pt-2">
@@ -325,13 +330,10 @@ export default function EditScreen() {
                       placeholder="Low quality, blurry, extra hands…"
                       value={negative}
                       onChangeText={setNegative}
-                      className="rounded-xl border p-3 text-base"
+                      className="rounded-xl border p-3 text-base bg-white dark:bg-zinc-900 text-gray-900 dark:text-white border-gray-200 dark:border-zinc-800"
                       placeholderTextColor={colors.mutedForeground}
                       style={{
-                        color: colors.foreground,
                         textAlignVertical: "top",
-                        borderColor: colors.border,
-                        backgroundColor: colors.card
                       }}
                     />
                     <Hint>Things to avoid in the result.</Hint>

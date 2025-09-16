@@ -2,6 +2,7 @@ import React from "react";
 import { Pressable, View } from "react-native";
 import { useTheme } from "heroui-native";
 import { AppText } from "./app-text";
+import { useAppTheme } from "@/contexts/app-theme-context";
 
 export function Label({ children }: { children: React.ReactNode }) {
   const { colors } = useTheme();
@@ -13,14 +14,9 @@ export function Label({ children }: { children: React.ReactNode }) {
 }
 
 export function Section({ children }: { children: React.ReactNode }) {
-  const { colors } = useTheme();
   return (
     <View
-      style={{
-        backgroundColor: colors.surface,
-        borderColor: colors.border,
-      }}
-      className="rounded-2xl border px-4 py-3"
+      className="rounded-2xl border px-4 py-3 bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800"
     >
       {children}
     </View>
@@ -49,15 +45,18 @@ export function ChipOption({
   return (
     <Pressable
       onPress={onPress}
-      style={{
-        borderColor: selected ? "#ffffff" : colors.border,
-        backgroundColor: selected ? "#ffffff" : "transparent",
-      }}
-      className="rounded-full border px-3 py-2"
+      className={`rounded-full border px-3 py-2 ${
+        selected
+          ? 'bg-blue-500 border-blue-500'
+          : 'bg-transparent border-gray-300 dark:border-zinc-700'
+      }`}
     >
       <AppText
-        style={{ color: selected ? "#000000" : colors.foreground }}
-        className="text-sm font-medium"
+        className={`text-sm font-medium ${
+          selected
+            ? 'text-white'
+            : 'text-gray-900 dark:text-white'
+        }`}
       >
         {label}
       </AppText>
