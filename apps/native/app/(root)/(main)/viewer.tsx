@@ -101,7 +101,7 @@ export default function ViewerScreen() {
         contentContainerStyle={{ flexGrow: 1 }}
         showsVerticalScrollIndicator={false}
       >
-        <View className="flex-1 items-center justify-center px-4 py-4" style={{ paddingTop: insets.top + 60, paddingBottom: isCompareMode ? 80 : 20 }}>
+        <View className="flex-1 items-center justify-center px-2 py-2" style={{ paddingTop: insets.top + 50, paddingBottom: isCompareMode ? 70 : 10 }}>
           {/* Show comparison slider when in compare mode and switch is on */}
           {isCompareMode && showComparison ? (
             <View style={{ width: '100%', alignItems: 'center' }}>
@@ -109,7 +109,7 @@ export default function ViewerScreen() {
               <BeforeAfterSliderOptimized
                 beforeImage={originalSrc}
                 afterImage={src}
-                height={500}
+                height={600}
               />
 
               {/* Info text */}
@@ -120,20 +120,19 @@ export default function ViewerScreen() {
               </View>
             </View>
           ) : (
-            /* Regular single image view */
-            <View style={{ width: '100%', alignItems: 'center' }}>
+            /* Regular single image view - full space */
+            <View style={{ width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
               <Image
                 source={{ uri: src }}
                 resizeMode="contain"
                 style={{
                   width: "100%",
-                  height: 500,
-                  borderRadius: 16,
-                  backgroundColor: colors.panel
+                  height: "100%",
+                  maxHeight: 700
                 }}
               />
               {isCompareMode && (
-                <View className="mt-4 px-4">
+                <View className="absolute bottom-0 px-4 py-2">
                   <AppText className="text-center text-muted-foreground text-sm">
                     Showing restored image only
                   </AppText>
