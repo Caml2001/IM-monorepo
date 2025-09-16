@@ -11,7 +11,7 @@ import { AppText } from "@/components/app-text";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 
-const IMAGE_TYPES = ["all", "generated", "edited", "upscaled", "bg-removed"] as const;
+const IMAGE_TYPES = ["all", "generated", "edited", "upscaled", "bg-removed", "restored"] as const;
 type ImageType = typeof IMAGE_TYPES[number];
 
 const { width: screenWidth } = Dimensions.get("window");
@@ -32,11 +32,25 @@ export default function LibraryScreen() {
   const images = useUserImages(user?._id, selectedType === "all" ? undefined : selectedType);
   const deleteImage = useDeleteImage();
   
-  const handleImagePress = (imageUrl: string) => {
-    router.push({
-      pathname: "/(root)/(main)/viewer",
-      params: { uri: encodeURIComponent(imageUrl) },
-    });
+  const handleImagePress = (image: any) => {
+    // Check if this is a restored image and has original image metadata
+    if (image.type === "restored" && image.metadata?.originalImageUrl) {
+      // Open with comparison viewer for restored images
+      router.push({
+        pathname: "/(root)/(main)/viewer",
+        params: {
+          uri: encodeURIComponent(image.imageUrl),
+          originalUri: encodeURIComponent(image.metadata.originalImageUrl),
+          mode: "compare"
+        },
+      });
+    } else {
+      // Regular viewer for other images
+      router.push({
+        pathname: "/(root)/(main)/viewer",
+        params: { uri: encodeURIComponent(image.imageUrl) },
+      });
+    }
   };
   
   const handleImageLongPress = (imageId: any, imageUrl: string) => {
@@ -177,7 +191,7 @@ export default function LibraryScreen() {
                 {images.map((image, index) => (
                   <Pressable
                     key={image._id}
-                    onPress={() => handleImagePress(image.imageUrl)}
+                    onPress={() => handleImagePress(image)}
                     onLongPress={() => handleImageLongPress(image._id, image.imageUrl)}
                     style={{ 
                       width: imageSize, 
