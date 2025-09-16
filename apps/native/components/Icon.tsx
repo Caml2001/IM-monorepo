@@ -32,6 +32,9 @@ const svgIcons: Record<string, string> = {
   "refresh-outline": `<svg xmlns="http://www.w3.org/2000/svg" height="18" width="18" viewBox="0 0 18 18"><g stroke-width="1.5" fill="none" stroke="currentColor"><polyline points="8.5 12.75 10.75 15 8.5 17.25" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor"></polyline><path d="M4.952,4.238c-1.347,1.146-2.202,2.855-2.202,4.762,0,3.452,2.798,6.25,6.25,6.25,.579,0,1.14-.079,1.672-.226" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor"></path><polyline points="9.5 5.25 7.25 3 9.5 .75" stroke-linecap="round" stroke-linejoin="round"></polyline><path d="M13.048,13.762c1.347-1.146,2.202-2.855,2.202-4.762,0-3.452-2.798-6.25-6.25-6.25-.597,0-1.175,.084-1.722,.24" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>`,
   "image-outline": `<svg xmlns="http://www.w3.org/2000/svg" height="18" width="18" viewBox="0 0 18 18"><g stroke-width="1.5" fill="none" stroke="currentColor"><path d="M3.762,14.989l6.074-6.075c.781-.781,2.047-.781,2.828,0l2.586,2.586" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path><rect x="2.75" y="2.75" width="12.5" height="12.5" rx="2" ry="2" stroke-linecap="round" stroke-linejoin="round"></rect><circle cx="6.25" cy="7.25" r="1.25" stroke="none" fill="currentColor"></circle></g></svg>`,
   
+  // Magic/AI
+  "sparkles": `<svg xmlns="http://www.w3.org/2000/svg" height="18" width="18" viewBox="0 0 18 18"><g stroke-width="1.5" fill="none" stroke="currentColor"><path d="M9,2.75c0,2.347-1.903,4.25-4.25,4.25,2.347,0,4.25,1.903,4.25,4.25,0-2.347,1.903-4.25,4.25-4.25-2.347,0-4.25-1.903-4.25-4.25Z" stroke-linecap="round" stroke-linejoin="round"></path><path d="M3.5,12c0,.966-.784,1.75-1.75,1.75,.966,0,1.75,.784,1.75,1.75,0-.966,.784-1.75,1.75-1.75-.966,0-1.75-.784-1.75-1.75Z" stroke-linecap="round" stroke-linejoin="round"></path><path d="M14.5,12c0,.966-.784,1.75-1.75,1.75,.966,0,1.75,.784,1.75,1.75,0-.966,.784-1.75,1.75-1.75-.966,0-1.75-.784-1.75-1.75Z" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>`,
+
   // Actions
   "share-outline": `<svg xmlns="http://www.w3.org/2000/svg" height="18" width="18" viewBox="0 0 18 18"><g stroke-width="1.5" fill="none" stroke="currentColor"><line x1="15.813" y1="2.187" x2="7.657" y2="10.343" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor"></line><path d="M15.947,2.73l-4.154,12.923c-.142,.443-.743,.509-.977,.106l-3.159-5.416L2.241,7.184c-.402-.235-.337-.835,.106-.977L15.27,2.053c.417-.134,.811,.26,.677,.677Z" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>`,
   share: `<svg xmlns="http://www.w3.org/2000/svg" height="18" width="18" viewBox="0 0 18 18"><g stroke-width="1.5" fill="none" stroke="currentColor"><line x1="15.813" y1="2.187" x2="7.657" y2="10.343" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor"></line><path d="M15.947,2.73l-4.154,12.923c-.142,.443-.743,.509-.977,.106l-3.159-5.416L2.241,7.184c-.402-.235-.337-.835,.106-.977L15.27,2.053c.417-.134,.811,.26,.677,.677Z" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>`,
@@ -56,6 +59,7 @@ const nameMap: Record<string, string> = {
   "share-outline": "square.and.arrow.up",
   "download-outline": "arrow.down.circle",
   "image-outline": "photo",
+  "sparkles": "sparkles",
 };
 
 const textFallback: Record<string, string> = {
@@ -72,6 +76,7 @@ const textFallback: Record<string, string> = {
   "download-outline": "⇩",
   "image-outline": "🖼️",
   "trending-up-outline": "📈",
+  "sparkles": "✦",
   close: "✕",
   home: "🏠",
   search: "🔍",

@@ -27,7 +27,6 @@ export default function HomeRoute() {
             {/* Push CTAs to bottom */}
             <View className="flex-1 justify-end gap-6">
                 <View className="gap-3">
-                    <Text className="text-lg font-semibold">Start editing</Text>
                     <View className="gap-3">
                         <Link href={"/(root)/(main)/trends"} asChild>
                             <Button

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { View, TextInput, ScrollView, Pressable, Image, Alert, Text } from "react-native";
+import { useState, useRef } from "react";
+import { View, TextInput, ScrollView, Pressable, Image, Alert, Text, KeyboardAvoidingView, Platform } from "react-native";
 import { Button, Switch, useTheme } from "heroui-native";
 import type { ImageSourcePropType } from "react-native";
 import { ScreenScrollView } from "@/components/screen-scroll-view";
@@ -148,68 +148,55 @@ export default function CreateScreen() {
 
   return (
     <View className="flex-1">
-      <ScreenScrollView disableHeaderOffset contentContainerClassName="gap-5 pb-28" keyboardShouldPersistTaps="handled">
-      <Section>
-        <View className="gap-3">
-          <View className="flex-row items-center justify-between">
-            <View className="flex-row items-center gap-2">
-              <Icon name="create-outline" size={20} color={colors.accent} />
-              <Label>Creative Prompt</Label>
-            </View>
-            <View className="px-2 py-1 rounded-full" style={{ backgroundColor: colors.accent + '20' }}>
-              <AppText className="text-xs font-medium" style={{ color: colors.accent }}>Required</AppText>
-            </View>
-          </View>
-          <TextInput
-            placeholder="Describe your vision in detail: subject, setting, lighting, mood, style..."
-            value={prompt}
-            onChangeText={setPrompt}
-            multiline
-            numberOfLines={4}
-            className="rounded-xl border-2 p-4 text-base font-medium"
-            placeholderTextColor={colors.mutedForeground}
-            style={{ 
-              color: colors.foreground, 
-              textAlignVertical: "top",
-              minHeight: 100,
-              borderColor: prompt ? colors.accent : colors.border,
-              backgroundColor: prompt ? colors.accent + '05' : 'transparent'
-            }}
-          />
-          <Button
-            variant={prompt ? "secondary" : undefined}
-            size="md"
-            className="rounded-xl"
-            disabled={isEnhancing}
-            onPress={async () => {
-              if (!user?._id) {
-                Alert.alert("Authentication Required", "Please sign in to enhance prompts");
-                return;
-              }
-              
-              try {
-                // For text-to-image, we don't have images but can still enhance the prompt
-                const result = await enhancePrompt([], prompt);
-                if (result.enhancedPrompt) {
-                  setPrompt(result.enhancedPrompt);
-                }
-              } catch (error) {
-                console.error("Enhancement error:", error);
-              }
-            }}
-          >
-            <Button.StartContent>
-              <Icon name="sparkles" size={18} color={isEnhancing ? colors.mutedForeground : (prompt ? colors.foreground : colors.background)} />
-            </Button.StartContent>
-            <Button.LabelContent className="font-semibold">{isEnhancing ? "Enhancing with AI..." : "✨ Enhance with AI"}</Button.LabelContent>
-          </Button>
-          {prompt && (
-            <View className="p-3 rounded-lg" style={{ backgroundColor: colors.accent + '10', borderWidth: 1, borderColor: colors.accent + '30' }}>
-              <AppText className="text-xs" style={{ color: colors.foreground }}>💡 Great! A detailed prompt will create stunning results</AppText>
-            </View>
-          )}
-        </View>
-      </Section>
+      <ScreenScrollView
+        disableHeaderOffset
+        contentContainerClassName="gap-5 pb-28"
+        keyboardShouldPersistTaps="handled"
+      >
+        <TextInput
+        placeholder="Describe your vision in detail: subject, setting, lighting, mood, style..."
+        value={prompt}
+        onChangeText={setPrompt}
+        multiline
+        numberOfLines={4}
+        className="rounded-xl border-2 p-4 text-base font-medium"
+        placeholderTextColor={colors.mutedForeground}
+        style={{
+          color: colors.foreground,
+          textAlignVertical: "top",
+          minHeight: 100,
+          borderColor: prompt ? colors.accent : colors.border,
+          backgroundColor: colors.card
+        }}
+      />
+
+      <Button
+        variant={prompt ? "secondary" : undefined}
+        size="md"
+        className="rounded-xl"
+        disabled={isEnhancing}
+        onPress={async () => {
+          if (!user?._id) {
+            Alert.alert("Authentication Required", "Please sign in to enhance prompts");
+            return;
+          }
+
+          try {
+            // For text-to-image, we don't have images but can still enhance the prompt
+            const result = await enhancePrompt([], prompt);
+            if (result.enhancedPrompt) {
+              setPrompt(result.enhancedPrompt);
+            }
+          } catch (error) {
+            console.error("Enhancement error:", error);
+          }
+        }}
+      >
+        <Button.StartContent>
+          <Icon name="sparkles" size={18} color={isEnhancing ? colors.mutedForeground : (prompt ? colors.foreground : colors.background)} />
+        </Button.StartContent>
+        <Button.LabelContent className="font-semibold">{isEnhancing ? "Enhancing with AI..." : "Enhance with AI"}</Button.LabelContent>
+      </Button>
 
       <Section>
         <View className="gap-3">
@@ -254,9 +241,14 @@ export default function CreateScreen() {
                   placeholder="Low quality, blurry, extra hands…"
                   value={negative}
                   onChangeText={setNegative}
-                  className="rounded-xl border border-border p-3 text-base"
+                  className="rounded-xl border p-3 text-base"
                   placeholderTextColor={colors.mutedForeground}
-                  style={{ color: colors.foreground, textAlignVertical: "top" }}
+                  style={{
+                    color: colors.foreground,
+                    textAlignVertical: "top",
+                    borderColor: colors.border,
+                    backgroundColor: colors.card
+                  }}
                 />
                 <Hint>Things to avoid in the result.</Hint>
               </View>
@@ -314,7 +306,6 @@ export default function CreateScreen() {
         disabled={!prompt || credits <= 0 || !user}
         onPress={handleGenerate}
       />
-
     </View>
   );
 }

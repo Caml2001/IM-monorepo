@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Image, TextInput, Pressable, ScrollView, Alert } from "react-native";
+import { View, Image, TextInput, Pressable, ScrollView, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Button, Switch, useTheme } from "heroui-native";
 import { ScreenScrollView } from "@/components/screen-scroll-view";
@@ -131,7 +131,12 @@ export default function EditScreen() {
 
   return (
     <View className="flex-1">
-      <ScreenScrollView disableHeaderOffset contentContainerClassName="gap-5 pb-28" keyboardShouldPersistTaps="handled">
+      <ScreenScrollView
+        disableHeaderOffset
+        contentContainerClassName="gap-5 pb-28"
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets={true}
+      >
 
       {/* Empty state first */}
       {images.length === 0 ? (
@@ -140,28 +145,9 @@ export default function EditScreen() {
             <Icon name="image-outline" size={32} color={colors.mutedForeground} />
             <Label>No image yet</Label>
             <Hint>Upload one or more photos to edit or create.</Hint>
-            <View className="flex-row gap-3 pt-2">
-              <Button className="rounded-full" onPress={handlePick}>
-                <Button.LabelContent>Upload photo</Button.LabelContent>
-              </Button>
-              <Button
-                variant="tertiary"
-                className="rounded-full"
-                onPress={() => {
-                  // Use public sample images for testing
-                  const sampleImages = [
-                    "https://images.unsplash.com/photo-1557682250-33bd709cbe85?w=500&q=80",
-                    "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=500&q=80"
-                  ];
-                  setImages((prev) => {
-                    const merged = [...prev, ...sampleImages];
-                    return Array.from(new Set(merged)).slice(0, 5);
-                  });
-                }}
-              >
-                <Button.LabelContent>Try samples</Button.LabelContent>
-              </Button>
-            </View>
+            <Button className="rounded-full" onPress={handlePick}>
+              <Button.LabelContent>Upload photo</Button.LabelContent>
+            </Button>
           </View>
         </Section>
       ) : (
@@ -254,72 +240,61 @@ export default function EditScreen() {
           </View>
 
       {images.length > 0 && mode !== "Background Remove" && (
-        <Section>
-          <View className="gap-3">
-            <View className="flex-row items-center gap-2">
-              <Icon name="color-wand-outline" size={20} color={colors.accent} />
-              <Label>Creative Prompt</Label>
-            </View>
-            <TextInput
-              placeholder={"Describe your vision: style, mood, setting, lighting..."}
-              value={prompt}
-              onChangeText={setPrompt}
-              multiline
-              numberOfLines={4}
-              className="rounded-xl border-2 p-4 text-base font-medium"
-              placeholderTextColor={colors.mutedForeground}
-              style={{ 
-                color: colors.foreground, 
-                textAlignVertical: "top", 
-                minHeight: 100,
-                borderColor: prompt ? colors.accent : colors.border,
-                backgroundColor: prompt ? colors.accent + '05' : 'transparent'
+        <>
+          <TextInput
+            placeholder={"Describe your vision: style, mood, setting, lighting..."}
+            value={prompt}
+            onChangeText={setPrompt}
+            multiline
+            numberOfLines={4}
+            className="rounded-xl border-2 p-4 text-base font-medium"
+            placeholderTextColor={colors.mutedForeground}
+            style={{
+              color: colors.foreground,
+              textAlignVertical: "top",
+              minHeight: 100,
+              borderColor: prompt ? colors.accent : colors.border,
+              backgroundColor: colors.card
+            }}
+          />
+          <Button
+            variant={prompt ? "secondary" : undefined}
+            size="md"
+            className="rounded-xl"
+            disabled={isEnhancing || images.length === 0}
+            onPress={async () => {
+                if (!user?._id) {
+                  Alert.alert("Authentication Required", "Please sign in to enhance prompts");
+                  return;
+                }
+
+                try {
+                  // Upload images first if they're local
+                  const uploadedUrls = await Promise.all(
+                    images.map(async (imageUri) => {
+                      if (imageUri.startsWith('http://') || imageUri.startsWith('https://')) {
+                        return imageUri;
+                      }
+                      return await uploadImage(user._id, imageUri);
+                    })
+                  );
+
+                  // Enhance the prompt
+                  const result = await enhancePrompt(uploadedUrls, prompt);
+                  if (result.enhancedPrompt) {
+                    setPrompt(result.enhancedPrompt);
+                  }
+                } catch (error) {
+                  console.error("Enhancement error:", error);
+                }
               }}
-            />
-            <Button
-              variant={prompt ? "secondary" : undefined}
-              size="md"
-              className="rounded-xl self-stretch"
-              disabled={isEnhancing || images.length === 0}
-              onPress={async () => {
-                  if (!user?._id) {
-                    Alert.alert("Authentication Required", "Please sign in to enhance prompts");
-                    return;
-                  }
-                  
-                  try {
-                    // Upload images first if they're local
-                    const uploadedUrls = await Promise.all(
-                      images.map(async (imageUri) => {
-                        if (imageUri.startsWith('http://') || imageUri.startsWith('https://')) {
-                          return imageUri;
-                        }
-                        return await uploadImage(user._id, imageUri);
-                      })
-                    );
-                    
-                    // Enhance the prompt
-                    const result = await enhancePrompt(uploadedUrls, prompt);
-                    if (result.enhancedPrompt) {
-                      setPrompt(result.enhancedPrompt);
-                    }
-                  } catch (error) {
-                    console.error("Enhancement error:", error);
-                  }
-                }}
-              >
-                <Button.StartContent>
-                  <Icon name="sparkles" size={18} color={isEnhancing ? colors.mutedForeground : (prompt ? colors.foreground : colors.background)} />
-                </Button.StartContent>
-                <Button.LabelContent className="font-semibold">{isEnhancing ? "Enhancing with AI..." : "✨ Enhance with AI"}</Button.LabelContent>
-              </Button>
-            {prompt && (
-              <View className="p-3 rounded-lg" style={{ backgroundColor: colors.accent + '10', borderWidth: 1, borderColor: colors.accent + '30' }}>
-                <AppText className="text-xs" style={{ color: colors.foreground }}>💡 Tip: A detailed prompt creates much better results!</AppText>
-              </View>
-            )}
-          </View>
-        </Section>
+            >
+              <Button.StartContent>
+                <Icon name="sparkles" size={18} color={isEnhancing ? colors.mutedForeground : (prompt ? colors.foreground : colors.background)} />
+              </Button.StartContent>
+              <Button.LabelContent className="font-semibold">{isEnhancing ? "Enhancing with AI..." : "Enhance with AI"}</Button.LabelContent>
+            </Button>
+        </>
       )}
 
       {/* Advanced panel */}
@@ -350,9 +325,14 @@ export default function EditScreen() {
                       placeholder="Low quality, blurry, extra hands…"
                       value={negative}
                       onChangeText={setNegative}
-                      className="rounded-xl border border-border p-3 text-base"
+                      className="rounded-xl border p-3 text-base"
                       placeholderTextColor={colors.mutedForeground}
-                      style={{ color: colors.foreground, textAlignVertical: "top" }}
+                      style={{
+                        color: colors.foreground,
+                        textAlignVertical: "top",
+                        borderColor: colors.border,
+                        backgroundColor: colors.card
+                      }}
                     />
                     <Hint>Things to avoid in the result.</Hint>
                   </View>
