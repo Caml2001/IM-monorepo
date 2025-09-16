@@ -75,10 +75,14 @@ export default function RestoreScreen() {
       });
 
       if (result?.imageUrl) {
-        // Navigate to viewer with the restored image
+        // Navigate to viewer with both original and restored images for comparison
         router.push({
           pathname: "/(root)/(main)/viewer",
-          params: { uri: encodeURIComponent(result.imageUrl) }
+          params: {
+            uri: encodeURIComponent(result.imageUrl),
+            originalUri: encodeURIComponent(uploadedUrl),
+            mode: "compare" // Indicate this is a before/after comparison
+          }
         });
       } else {
         Alert.alert("Error", "Failed to restore image - no result URL");
