@@ -24,12 +24,14 @@ export const getAllUserDataQuery = query({
 		if (userData?.user) {
 			const credits = userData.user.credits ?? 10;
 			const tier = userData.user.tier ?? "free";
+			const themePreference = userData.user.themePreference ?? "system";
 			return {
 				...userData,
-				user: { 
-					...userData.user, 
+				user: {
+					...userData.user,
 					credits,
 					tier,
+					themePreference,
 				},
 			};
 		}
@@ -129,12 +131,32 @@ export const updateProfile = mutation({
 	},
 	handler: async (ctx, args) => {
 		const { userId, ...updates } = args;
-		
+
 		const user = await ctx.db.get(userId);
 		if (!user) throw new Error("User not found");
-		
+
 		await ctx.db.patch(userId, updates);
-		
+
 		return { success: true };
+	},
+});
+
+/**
+ * Update theme preference
+ */
+export const updateThemePreference = mutation({
+	args: {
+		userId: v.id("users"),
+		theme: v.union(v.literal("system"), v.literal("dark"), v.literal("light")),
+	},
+	handler: async (ctx, args) => {
+		const user = await ctx.db.get(args.userId);
+		if (!user) throw new Error("User not found");
+
+		await ctx.db.patch(args.userId, {
+			themePreference: args.theme,
+		});
+
+		return { success: true, theme: args.theme };
 	},
 });

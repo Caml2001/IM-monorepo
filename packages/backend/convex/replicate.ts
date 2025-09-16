@@ -556,7 +556,101 @@ export const editImage = action({
         imageId,
         error: error instanceof Error ? error.message : "Edit failed",
       });
-      
+
+      throw error;
+    }
+  },
+});
+
+/**
+ * Restore an image (fix blur, scratches, colors, etc.)
+ */
+export const restoreImage = action({
+  args: {
+    userId: v.id("users"),
+    imageUrl: v.string(),
+    safetyTolerance: v.optional(v.union(v.literal(0), v.literal(1), v.literal(2))),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    imageId: v.id("images"),
+    imageUrl: v.string(),
+  }),
+  handler: async (ctx, args) => {
+    const { userId, imageUrl, safetyTolerance = 2 } = args;
+
+    // Create image record
+    const imageId: Id<"images"> = await ctx.runMutation(internal.images.createPending, {
+      userId,
+      prompt: "Image restored",
+      type: "restored",
+      model: "restore-image",
+      originalImageUrl: imageUrl,
+    });
+
+    try {
+      // Call Replicate restore-image API
+      const response = await fetch(
+        "https://api.replicate.com/v1/models/flux-kontext-apps/restore-image/predictions",
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${process.env.REPLICATE_API_KEY}`,
+            "Content-Type": "application/json",
+            "Prefer": "wait"
+          },
+          body: JSON.stringify({
+            input: {
+              input_image: imageUrl,
+              output_format: "png",
+              safety_tolerance: safetyTolerance
+            }
+          })
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Replicate API error response:`, errorText);
+        throw new Error(`Replicate API error: ${response.status} ${response.statusText} - ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log("Restore image response:", result);
+
+      // Check for errors in the response
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      const outputUrl = result.output;
+
+      if (!outputUrl || !outputUrl.startsWith('http')) {
+        throw new Error("Invalid output URL from model");
+      }
+
+      // Upload to R2
+      const imageKey = generateImageKey(userId, "restored", "png");
+      const permanentUrl = await uploadImageFromUrl(outputUrl as string, imageKey);
+
+      // Update image record
+      await ctx.runMutation(internal.images.updateCompleted, {
+        imageId,
+        imageUrl: permanentUrl,
+        metadata: {
+          originalImageUrl: imageUrl,
+        },
+      });
+
+      return { success: true, imageId, imageUrl: permanentUrl };
+    } catch (error) {
+      console.error("Image restoration failed:", error);
+
+      await ctx.runMutation(internal.images.updateFailed, {
+        imageId,
+        error: error instanceof Error ? error.message : "Image restoration failed",
+      });
+
       throw error;
     }
   },

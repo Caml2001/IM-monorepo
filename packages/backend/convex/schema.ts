@@ -15,6 +15,7 @@ export default defineSchema({
 		image: v.optional(v.string()),
 		credits: v.optional(v.number()),
 		tier: v.optional(v.string()), // "free" | "pro" | "premium"
+		themePreference: v.optional(v.union(v.literal("system"), v.literal("dark"), v.literal("light"))),
 	}),
 	
 	// Images generated or processed by users
