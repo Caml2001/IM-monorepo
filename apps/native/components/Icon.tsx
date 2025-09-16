@@ -35,6 +35,11 @@ const svgIcons: Record<string, string> = {
   // Magic/AI
   "sparkles": `<svg xmlns="http://www.w3.org/2000/svg" height="18" width="18" viewBox="0 0 18 18"><g stroke-width="1.5" fill="none" stroke="currentColor"><path d="M9,2.75c0,2.347-1.903,4.25-4.25,4.25,2.347,0,4.25,1.903,4.25,4.25,0-2.347,1.903-4.25,4.25-4.25-2.347,0-4.25-1.903-4.25-4.25Z" stroke-linecap="round" stroke-linejoin="round"></path><path d="M3.5,12c0,.966-.784,1.75-1.75,1.75,.966,0,1.75,.784,1.75,1.75,0-.966,.784-1.75,1.75-1.75-.966,0-1.75-.784-1.75-1.75Z" stroke-linecap="round" stroke-linejoin="round"></path><path d="M14.5,12c0,.966-.784,1.75-1.75,1.75,.966,0,1.75,.784,1.75,1.75,0-.966,.784-1.75,1.75-1.75-.966,0-1.75-.784-1.75-1.75Z" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>`,
 
+  // Theme icons
+  "phone-portrait-outline": `<svg xmlns="http://www.w3.org/2000/svg" height="18" width="18" viewBox="0 0 18 18"><g stroke-width="1.5" fill="none" stroke="currentColor"><rect x="4.75" y="2.75" width="8.5" height="12.5" rx="1" ry="1" stroke-linecap="round" stroke-linejoin="round"></rect><line x1="9" y1="12.75" x2="9" y2="12.75" stroke-linecap="round" stroke-linejoin="round"></line></g></svg>`,
+  "moon-outline": `<svg xmlns="http://www.w3.org/2000/svg" height="18" width="18" viewBox="0 0 18 18"><g stroke-width="1.5" fill="none" stroke="currentColor"><path d="M15.25,10.035c-.45,.165-.938,.254-1.446,.254-2.546,0-4.61-2.064-4.61-4.61,0-1.593,.808-2.998,2.036-3.824-2.838,.298-5.055,2.688-5.055,5.611,0,3.108,2.518,5.625,5.625,5.625,2.923,0,5.313-2.217,5.611-5.055Z" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>`,
+  "sunny-outline": `<svg xmlns="http://www.w3.org/2000/svg" height="18" width="18" viewBox="0 0 18 18"><g stroke-width="1.5" fill="none" stroke="currentColor"><circle cx="9" cy="9" r="3.25" stroke-linecap="round" stroke-linejoin="round"></circle><line x1="9" y1="1.75" x2="9" y2="2.75" stroke-linecap="round" stroke-linejoin="round"></line><line x1="14.303" y1="3.697" x2="13.596" y2="4.404" stroke-linecap="round" stroke-linejoin="round"></line><line x1="16.25" y1="9" x2="15.25" y2="9" stroke-linecap="round" stroke-linejoin="round"></line><line x1="14.303" y1="14.303" x2="13.596" y2="13.596" stroke-linecap="round" stroke-linejoin="round"></line><line x1="9" y1="16.25" x2="9" y2="15.25" stroke-linecap="round" stroke-linejoin="round"></line><line x1="3.697" y1="14.303" x2="4.404" y2="13.596" stroke-linecap="round" stroke-linejoin="round"></line><line x1="1.75" y1="9" x2="2.75" y2="9" stroke-linecap="round" stroke-linejoin="round"></line><line x1="3.697" y1="3.697" x2="4.404" y2="4.404" stroke-linecap="round" stroke-linejoin="round"></line></g></svg>`,
+
   // Actions
   "share-outline": `<svg xmlns="http://www.w3.org/2000/svg" height="18" width="18" viewBox="0 0 18 18"><g stroke-width="1.5" fill="none" stroke="currentColor"><line x1="15.813" y1="2.187" x2="7.657" y2="10.343" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor"></line><path d="M15.947,2.73l-4.154,12.923c-.142,.443-.743,.509-.977,.106l-3.159-5.416L2.241,7.184c-.402-.235-.337-.835,.106-.977L15.27,2.053c.417-.134,.811,.26,.677,.677Z" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>`,
   share: `<svg xmlns="http://www.w3.org/2000/svg" height="18" width="18" viewBox="0 0 18 18"><g stroke-width="1.5" fill="none" stroke="currentColor"><line x1="15.813" y1="2.187" x2="7.657" y2="10.343" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor"></line><path d="M15.947,2.73l-4.154,12.923c-.142,.443-.743,.509-.977,.106l-3.159-5.416L2.241,7.184c-.402-.235-.337-.835,.106-.977L15.27,2.053c.417-.134,.811,.26,.677,.677Z" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>`,
@@ -60,6 +65,9 @@ const nameMap: Record<string, string> = {
   "download-outline": "arrow.down.circle",
   "image-outline": "photo",
   "sparkles": "sparkles",
+  "phone-portrait-outline": "iphone",
+  "moon-outline": "moon",
+  "sunny-outline": "sun.max",
 };
 
 const textFallback: Record<string, string> = {
@@ -77,6 +85,9 @@ const textFallback: Record<string, string> = {
   "image-outline": "🖼️",
   "trending-up-outline": "📈",
   "sparkles": "✦",
+  "phone-portrait-outline": "📱",
+  "moon-outline": "🌙",
+  "sunny-outline": "☀️",
   close: "✕",
   home: "🏠",
   search: "🔍",

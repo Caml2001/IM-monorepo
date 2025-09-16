@@ -27,6 +27,7 @@
 		"expo-dev-client": "~6.0.12",
 		"expo-file-system": "~19.0.14",
 		"expo-glass-effect": "^0.1.3",
+		"expo-haptics": "^15.0.7",
 		"expo-image-picker": "~17.0.8",
 		"expo-linking": "~8.0.8",
 		"expo-media-library": "~18.1.1",
