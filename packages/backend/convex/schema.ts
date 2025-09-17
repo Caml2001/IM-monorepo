@@ -32,8 +32,10 @@ export default defineSchema({
 			width: v.optional(v.number()),
 			height: v.optional(v.number()),
 			steps: v.optional(v.number()),
+			scale: v.optional(v.number()),
 			originalImageUrl: v.optional(v.string()),
 			replicateId: v.optional(v.string()),
+			faceEnhance: v.optional(v.boolean()),
 		})),
 		status: v.string(), // "pending", "processing", "completed", "failed"
 		error: v.optional(v.string()),

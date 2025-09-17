@@ -49,6 +49,7 @@ export const updateCompleted = internalMutation({
       scale: v.optional(v.number()),
       originalImageUrl: v.optional(v.string()),
       replicateId: v.optional(v.string()),
+      faceEnhance: v.optional(v.boolean()),
     })),
   },
   handler: async (ctx, args) => {

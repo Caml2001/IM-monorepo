@@ -414,82 +414,6 @@ export const removeBackground = action({
 });
 
 /**
- * Upscale an image
- */
-export const upscaleImage = action({
-  args: {
-    userId: v.id("users"),
-    imageUrl: v.string(),
-    scale: v.optional(v.number()),
-    enhanceFaces: v.optional(v.boolean()),
-  },
-  returns: v.object({
-    success: v.boolean(),
-    imageId: v.id("images"),
-    imageUrl: v.string(),
-  }),
-  handler: async (ctx, args) => {
-    const { userId, imageUrl, scale = 2, enhanceFaces = false } = args;
-    
-    // Create image record
-    const imageId: Id<"images"> = await ctx.runMutation(internal.images.createPending, {
-      userId,
-      prompt: `Upscaled ${scale}x`,
-      type: "upscaled",
-      model: enhanceFaces ? "gfpgan" : "esrgan",
-      originalImageUrl: imageUrl,
-    });
-    
-    try {
-      // Select model based on whether we need face enhancement
-      const model = enhanceFaces ? MODELS.upscale.gfpgan : MODELS.upscale.esrgan;
-      const params = enhanceFaces ? DEFAULT_PARAMS.gfpgan : DEFAULT_PARAMS.esrgan;
-      
-      const input = {
-        image: imageUrl,
-        ...params,
-      };
-      
-      console.log("Upscaling with model:", enhanceFaces ? "gfpgan" : "esrgan");
-      
-      // Run the model
-      const output = await replicate.run(model as any, { input });
-      
-      const outputUrl = Array.isArray(output) ? output[0] : output;
-      
-      if (!outputUrl) {
-        throw new Error("No output from model");
-      }
-      
-      // Upload to R2
-      const imageKey = generateImageKey(userId, "upscaled");
-      const permanentUrl = await uploadImageFromUrl(outputUrl as string, imageKey);
-      
-      // Update image record
-      await ctx.runMutation(internal.images.updateCompleted, {
-        imageId,
-        imageUrl: permanentUrl,
-        metadata: {
-          originalImageUrl: imageUrl,
-          scale,
-        },
-      });
-      
-      return { success: true, imageId, imageUrl: permanentUrl };
-    } catch (error) {
-      console.error("Upscaling failed:", error);
-      
-      await ctx.runMutation(internal.images.updateFailed, {
-        imageId,
-        error: error instanceof Error ? error.message : "Upscaling failed",
-      });
-      
-      throw error;
-    }
-  },
-});
-
-/**
  * Edit an image with a prompt
  */
 export const editImage = action({
@@ -649,6 +573,173 @@ export const restoreImage = action({
       await ctx.runMutation(internal.images.updateFailed, {
         imageId,
         error: error instanceof Error ? error.message : "Image restoration failed",
+      });
+
+      throw error;
+    }
+  },
+});
+
+export const upscaleImage = action({
+  args: {
+    userId: v.id("users"),
+    imageUrl: v.string(),
+    scale: v.union(v.literal(2), v.literal(4)),
+    faceEnhance: v.optional(v.boolean()),
+    width: v.optional(v.number()),
+    height: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const { userId, imageUrl, scale, faceEnhance = false, width, height } = args;
+    console.log("Starting GPT-Image upscale with params:", { userId, imageUrl, scale, faceEnhance, width, height });
+
+    // Function to determine the closest supported aspect ratio
+    const getAspectRatio = (width: number, height: number): string => {
+      const ratio = width / height;
+
+      // Define thresholds for common aspect ratios
+      if (Math.abs(ratio - 1) < 0.1) return "1:1";        // Square
+      if (Math.abs(ratio - 1.5) < 0.15) return "3:2";     // Horizontal
+      if (Math.abs(ratio - 0.667) < 0.1) return "2:3";    // Vertical
+
+      // Default to the closest one
+      if (ratio > 1.2) return "3:2";  // More horizontal
+      if (ratio < 0.8) return "2:3";  // More vertical
+      return "1:1";  // Default to square
+    };
+
+    // Validate environment
+    if (!process.env.REPLICATE_API_KEY) {
+      throw new Error("REPLICATE_API_KEY is not configured");
+    }
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error("OPENAI_API_KEY is not configured");
+    }
+
+    // Create image record
+    const imageId: Id<"images"> = await ctx.runMutation(internal.images.createPending, {
+      userId,
+      prompt: `Upscaled ${scale}x`,
+      type: "upscaled",
+      model: "gpt-image-1",
+      originalImageUrl: imageUrl,
+    });
+
+    // Determine aspect ratio (use provided dimensions or default to 1:1)
+    const aspectRatio = (width && height) ? getAspectRatio(width, height) : "1:1";
+    console.log(`Using aspect ratio: ${aspectRatio} for dimensions ${width}x${height}`);
+
+    try {
+      // Call GPT-Image for upscaling
+      const response = await fetch(
+        "https://api.replicate.com/v1/models/openai/gpt-image-1/predictions",
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${process.env.REPLICATE_API_KEY}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            input: {
+              prompt: `Upscale this image ${scale}x with high quality, enhance details and maintain realism${faceEnhance ? ', improve facial features and details' : ''}`,
+              quality: "high",
+              background: "auto",
+              moderation: "auto",
+              aspect_ratio: aspectRatio,
+              input_images: [imageUrl],
+              output_format: "webp",
+              input_fidelity: "high",
+              openai_api_key: process.env.OPENAI_API_KEY,
+              number_of_images: 1,
+              output_compression: 90
+            }
+          })
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Replicate API error response:`, errorText);
+        throw new Error(`Replicate API error: ${response.status} ${response.statusText} - ${errorText}`);
+      }
+
+      let result = await response.json();
+      console.log("Initial upscale response:", result);
+
+      // If the prediction is still processing, poll for the result
+      if (result.status === 'starting' || result.status === 'processing') {
+        const predictionId = result.id;
+        const maxAttempts = 60; // 60 attempts * 2 seconds = 2 minutes max
+        let attempts = 0;
+
+        while (attempts < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+
+          const statusResponse = await fetch(
+            `https://api.replicate.com/v1/predictions/${predictionId}`,
+            {
+              headers: {
+                "Authorization": `Bearer ${process.env.REPLICATE_API_KEY}`,
+              }
+            }
+          );
+
+          result = await statusResponse.json();
+          console.log(`Polling attempt ${attempts + 1}, status: ${result.status}`);
+
+          if (result.status === 'succeeded' || result.status === 'failed' || result.status === 'canceled') {
+            break;
+          }
+
+          attempts++;
+        }
+      }
+
+      // Check for errors in the response
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      if (result.status === 'failed') {
+        throw new Error(result.logs || "Model failed to process the image");
+      }
+
+      // The output might be an array or a single URL
+      const outputUrl = Array.isArray(result.output) ? result.output[0] : result.output;
+
+      if (!outputUrl || !outputUrl.startsWith('http')) {
+        throw new Error("Invalid output URL from model");
+      }
+
+      // Upload to R2
+      const imageKey = generateImageKey(userId, "upscaled", "png");
+      const permanentUrl = await uploadImageFromUrl(outputUrl as string, imageKey);
+
+      // Update image record
+      await ctx.runMutation(internal.images.updateCompleted, {
+        imageId,
+        imageUrl: permanentUrl,
+        metadata: {
+          originalImageUrl: imageUrl,
+          scale: scale,
+          faceEnhance: faceEnhance,
+        },
+      });
+
+      return {
+        imageUrl: permanentUrl,
+        imageId,
+        scale,
+        faceEnhance
+      };
+
+    } catch (error) {
+      console.error("Error upscaling image:", error);
+
+      // Update image record to failed status
+      await ctx.runMutation(internal.images.updateFailed, {
+        imageId,
+        error: error instanceof Error ? error.message : "Unknown error occurred",
       });
 
       throw error;
