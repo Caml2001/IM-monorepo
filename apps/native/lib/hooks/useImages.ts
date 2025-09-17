@@ -183,12 +183,14 @@ export function useMixImages() {
 export function useUpscaleImage() {
   const upscaleAction = useAction(api.replicate.upscaleImage);
   const [isUpscaling, setIsUpscaling] = useState(false);
-  
+
   const upscale = useCallback(async (params: {
     userId: Id<"users">;
     imageUrl: string;
-    scale?: number;
-    enhanceFaces?: boolean;
+    scale: 2 | 4;
+    faceEnhance?: boolean;
+    width?: number;
+    height?: number;
   }) => {
     setIsUpscaling(true);
     try {
@@ -202,7 +204,7 @@ export function useUpscaleImage() {
       setIsUpscaling(false);
     }
   }, [upscaleAction]);
-  
+
   return { upscale, isUpscaling };
 }
 
