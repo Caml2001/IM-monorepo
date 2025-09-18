@@ -106,16 +106,16 @@ export default function ViewerScreen() {
     <Pressable onPress={onPress} hitSlop={8} style={[{ borderRadius: 16, overflow: 'hidden' }, style]}>
       {GlassView ? (
         <GlassView glass={{ variant: 'regular' }} style={{ borderRadius: 16 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12 }}>
             {SymbolView && icon ? (
               <SymbolView name={icon} style={{ width: 18, height: 18, marginRight: 6 }} />
             ) : null}
-            <AppText className="text-foreground font-medium">{label}</AppText>
+            <AppText className="text-foreground font-medium text-lg">{label}</AppText>
           </View>
         </GlassView>
       ) : (
-        <View style={{ backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 8 }}>
-          <AppText className="text-white font-medium">{label}</AppText>
+        <View style={{ backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 16, paddingHorizontal: 12 }}>
+          <AppText className="text-white font-medium text-lg">{label}</AppText>
         </View>
       )}
     </Pressable>
