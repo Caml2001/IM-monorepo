@@ -39,12 +39,9 @@ export default function EditScreen() {
 
   const handlePick = async () => {
     try {
-      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!perm.granted) {
-        Alert.alert("Permission required", "We need access to your photos to continue.");
-        return;
-      }
+      // iOS Photos picker does not require permission; requesting can crash if InfoPlist is missing.
       const res = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsMultipleSelection: true,
         allowsEditing: false,
         quality: 1,

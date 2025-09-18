@@ -12,14 +12,25 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos to select images."
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "savePhotosPermission": "Allow $(PRODUCT_NAME) to save images to your photo library."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
       "tsconfigPaths": true
     },
-    "newArchEnabled": false,
-    "jsEngine": "jsc",
+    "jsEngine": "hermes",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -35,7 +46,9 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.charlymtz01.imagenary",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSPhotoLibraryUsageDescription": "Allow Imagenary to access your photos to select images.",
+        "NSPhotoLibraryAddUsageDescription": "Allow Imagenary to save images to your photo library."
       }
     },
     "android": {

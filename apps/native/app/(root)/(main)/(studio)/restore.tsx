@@ -33,12 +33,8 @@ export default function RestoreScreen() {
 
   const handlePick = async () => {
     try {
-      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!perm.granted) {
-        Alert.alert("Permission required", "We need access to your photos to continue.");
-        return;
-      }
       const res = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsMultipleSelection: false,
         allowsEditing: false,
         quality: 1,

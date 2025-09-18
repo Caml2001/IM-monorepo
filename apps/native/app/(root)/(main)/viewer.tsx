@@ -1,24 +1,27 @@
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useNavigation } from "expo-router";
 import { Alert, Image, Platform, Share, View, Pressable, ScrollView, Switch } from "react-native";
 import { useTheme } from "heroui-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon } from "@/components/Icon";
-import { Host, Text } from '@expo/ui/swift-ui';
-import { glassEffect, padding } from '@expo/ui/swift-ui/modifiers';
 import { BeforeAfterSliderOptimized } from "@/components/before-after-slider-optimized";
 import { AppText } from "@/components/app-text";
-import { useState } from "react";
+import { useCallback, useLayoutEffect, useState } from "react";
 import * as Haptics from "expo-haptics";
 
 let SymbolView: any;
+let GlassView: any;
 try {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   SymbolView = require("expo-symbols").SymbolView;
 } catch {}
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  GlassView = require('expo-glass-effect').GlassView;
+} catch {}
 let FileSystem: any, MediaLibrary: any;
 try {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
-  FileSystem = require("expo-file-system");
+  FileSystem = require("expo-file-system/legacy");
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   MediaLibrary = require("expo-media-library");
 } catch {}
@@ -39,6 +42,7 @@ export default function ViewerScreen() {
   }>();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
   const [showComparison, setShowComparison] = useState(mode === "compare");
 
   const src = uri ? decodeURIComponent(String(uri)) : undefined;
@@ -51,13 +55,17 @@ export default function ViewerScreen() {
     setShowComparison(!showComparison);
   };
 
-  const onShare = async () => {
+  const onShare = useCallback(async () => {
     const imageToShare = src;
     if (!imageToShare) return;
     try {
-      await Share.share({ url: imageToShare, message: imageToShare });
+      if (Platform.OS === 'ios') {
+        await Share.share({ url: imageToShare });
+      } else {
+        await Share.share({ message: imageToShare, url: imageToShare });
+      }
     } catch {}
-  };
+  }, [src]);
 
   const onDownload = async () => {
     const imageToSave = src;
@@ -75,15 +83,15 @@ export default function ViewerScreen() {
       }
       let localUri = imageToSave;
       if (imageToSave.startsWith("http")) {
-        const name = `dl_${Date.now()}.jpg`;
-        const tmp = FileSystem.cacheDirectory + name;
+        const name = `imagenary_${Date.now()}.jpg`;
+        const tmp = (FileSystem.cacheDirectory || "") + name;
         const res = await FileSystem.downloadAsync(imageToSave, tmp);
         localUri = res.uri;
       }
-      // copy to a temp file if it's a bundled asset without scheme
+      // If still not a local file path, fallback to Share
       if (!localUri.startsWith("file:")) {
-        // try to prefix
-        localUri = imageToSave;
+        await onShare();
+        return;
       }
       await MediaLibrary.saveToLibraryAsync(localUri);
       if (Platform.OS === "ios") Alert.alert("Saved", "Image saved to Photos");
@@ -92,6 +100,35 @@ export default function ViewerScreen() {
       await onShare();
     }
   };
+
+  // Reusable glass button using native GlassView when available
+  const GlassButton = ({ onPress, label, icon, style }: { onPress: () => void; label: string; icon?: string; style?: any }) => (
+    <Pressable onPress={onPress} hitSlop={8} style={[{ borderRadius: 16, overflow: 'hidden' }, style]}>
+      {GlassView ? (
+        <GlassView glass={{ variant: 'regular' }} style={{ borderRadius: 16 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8 }}>
+            {SymbolView && icon ? (
+              <SymbolView name={icon} style={{ width: 18, height: 18, marginRight: 6 }} />
+            ) : null}
+            <AppText className="text-foreground font-medium">{label}</AppText>
+          </View>
+        </GlassView>
+      ) : (
+        <View style={{ backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 8 }}>
+          <AppText className="text-white font-medium">{label}</AppText>
+        </View>
+      )}
+    </Pressable>
+  );
+
+  // Align a native glass button in the header (top-right)
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <GlassButton onPress={onShare} label="Share" icon="square.and.arrow.up" />
+      ),
+    });
+  }, [navigation, onShare]);
 
   if (!src) return null;
 
@@ -182,86 +219,23 @@ export default function ViewerScreen() {
 
       {/* Toggle button for compare mode (alternative button) */}
       {isCompareMode && (
-        <Pressable
+        <GlassButton
           onPress={handleToggleComparison}
-          className="absolute"
-          style={{
-            top: insets.top + 12,
-            left: 16,
-          }}
-        >
-          <Host matchContents>
-            <Text
-              modifiers={[
-                padding({
-                  horizontal: 12,
-                  vertical: 6,
-                }),
-                glassEffect({
-                  glass: {
-                    variant: 'regular',
-                  },
-                }),
-              ]}>
-              {showComparison ? "Single View" : "Compare"}
-            </Text>
-          </Host>
-        </Pressable>
+          label={showComparison ? "Single View" : "Compare"}
+          icon={showComparison ? undefined : undefined}
+          style={{ position: 'absolute', top: insets.top + 56, left: 16, zIndex: 10 }}
+        />
       )}
 
-      {/* Share button - top right with SwiftUI glass effect */}
-      <Pressable
-        onPress={onShare}
-        className="absolute"
-        style={{
-          top: insets.top + 12,
-          right: 16,
-        }}
-      >
-        <Host matchContents>
-          <Text
-            modifiers={[
-              padding({
-                horizontal: 12,
-                vertical: 6,
-              }),
-              glassEffect({
-                glass: {
-                  variant: 'regular',
-                },
-              }),
-            ]}>
-            Share
-          </Text>
-        </Host>
-      </Pressable>
+      {/* Share button now lives in headerRight via navigation options */}
 
-      {/* Save button - bottom right with SwiftUI glass effect */}
-      <Pressable
+      {/* Save button - bottom right with glass effect */}
+      <GlassButton
         onPress={onDownload}
-        className="absolute"
-        style={{
-          bottom: insets.bottom + 40,
-          right: 20,
-        }}
-      >
-        <Host matchContents>
-          <Text
-            modifiers={[
-              padding({
-                horizontal: 20,
-                vertical: 12,
-              }),
-              glassEffect({
-                glass: {
-                  variant: 'regular',
-                },
-              }),
-            ]}>
-            Save
-          </Text>
-        </Host>
-      </Pressable>
+        label="Save"
+        icon="square.and.arrow.down"
+        style={{ position: 'absolute', bottom: insets.bottom + 40, right: 20, zIndex: 10 }}
+      />
     </View>
   );
 }
